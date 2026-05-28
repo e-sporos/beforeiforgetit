@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>before i forget it</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── TOKENS ── */
+    :root {
+      --mustard: #D4B800;
+      --mustard-dark: #B89E00;
+      --tag-film: #E8442A;
+      --tag-people: #2A9E6A;
+      --tag-culture: #7C4DE8;
+      --tag-history: #D4B800;
+      --tag-books: #E8762A;
+      --tag-music: #2A7CE8;
+      --radius-tile: 22px;
+      --radius-pill: 100px;
+      --gap: 10px;
+      --transition: 0.4s ease;
+    }
+
+    /* ── THEME ── */
+    body { font-family: 'Bricolage Grotesque', sans-serif; transition: background var(--transition), color var(--transition); }
+    body.dark  { background: #0D0D08; color: #FFFFFF; }
+    body.light { background: #FFFFFF; color: #14130C; }
+
+    /* ── NAV ── */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.75rem 2rem;
+    }
+    .logo {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .logo:hover { opacity: 0.7; }
+    body.dark  .logo { color: #FFFFFF; }
+    body.light .logo { color: #14130C; }
+    .logo em {
+      font-style: normal;
+      background: var(--mustard);
+      color: #0D0D08;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-left: 1px;
+    }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-about {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-decoration: none;
+      opacity: 0.35;
+      transition: opacity 0.2s;
+    }
+    .nav-about:hover { opacity: 1; }
+    body.dark  .nav-about { color: #FFFFFF; }
+    body.light .nav-about { color: #14130C; }
+
+    /* ── TOGGLE ── */
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      padding: 7px 14px;
+      border-radius: var(--radius-pill);
+      border: 1.5px solid;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      user-select: none;
+      transition: all 0.2s;
+      background: none;
+    }
+    body.dark  .toggle { border-color: #333325; color: #FFFFFF; }
+    body.light .toggle { border-color: #E0DBC8; color: #9A9478; }
+    .toggle-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      transition: background 0.3s;
+    }
+    body.dark  .toggle-dot { background: #FFFFFF; }
+    body.light .toggle-dot { background: #0D0D08; }
+
+    /* ── LEGEND ── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 1.25rem 2rem 0;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      border: 1.5px solid transparent;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    body.dark  .legend-item { color: #FFFFFF; opacity: 0.4; }
+    body.light .legend-item { color: #14130C; opacity: 0.45; }
+    .legend-item:hover { opacity: 1 !important; }
+    .legend-item.active { opacity: 1 !important; border-color: currentColor; }
+    body.dark  .legend-item.active { background: rgba(255,255,255,0.06); }
+    body.light .legend-item.active { background: rgba(0,0,0,0.04); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .legend-dot-all {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: conic-gradient(#E8442A 0deg 60deg, #2A9E6A 60deg 120deg, #7C4DE8 120deg 180deg, #D4B800 180deg 240deg, #E8762A 240deg 300deg, #2A7CE8 300deg 360deg);
+    }
+
+    /* ── MOSAIC GRID ── */
+    .mosaic {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: var(--gap);
+      padding: 0 2rem;
+      margin-top: 1.25rem;
+    }
+    .tile {
+      border-radius: var(--radius-tile);
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.3s;
+    }
+    .tile:hover { transform: scale(1.01); }
+    .tile.hidden { display: none; }
+    .t1 { grid-column: span 7; grid-row: span 2; }
+    .t2 { grid-column: span 5; }
+    .t3 { grid-column: span 5; }
+    .t4 { grid-column: span 4; grid-row: span 2; }
+    .t5 { grid-column: span 4; grid-row: span 2; }
+    .t6 { grid-column: span 4; grid-row: span 2; }
+
+    .tile-img-wrap { width: 100%; height: 100%; overflow: hidden; position: relative; }
+    .t1 .tile-img-wrap { min-height: 420px; }
+    .t2 .tile-img-wrap, .t3 .tile-img-wrap { min-height: 195px; }
+    .t4 .tile-img-wrap, .t5 .tile-img-wrap, .t6 .tile-img-wrap { min-height: 230px; }
+    .tile-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      transition: transform 0.5s ease;
+    }
+    .tile-img-wrap svg {
+      width: 100%; height: 100%; display: block;
+      transition: transform 0.5s ease;
+    }
+    .tile:hover .tile-img-wrap img,
+    .tile:hover .tile-img-wrap svg { transform: scale(1.05); }
+
+    .tile-overlay {
+      position: absolute; inset: 0;
+      border-radius: var(--radius-tile);
+      display: flex; flex-direction: column;
+      justify-content: flex-end;
+      padding: 1.5rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0) 50%);
+      transition: background 0.3s;
+    }
+    .tile:hover .tile-overlay {
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.12) 65%);
+    }
+
+    .tile-tag {
+      display: inline-block;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 4px 11px; border-radius: var(--radius-pill);
+      margin-bottom: 0.6rem; width: fit-content;
+    }
+    .tag-film    { background: var(--tag-film);    color: #fff; }
+    .tag-people  { background: var(--tag-people);  color: #fff; }
+    .tag-culture { background: var(--tag-culture); color: #fff; }
+    .tag-history { background: var(--tag-history); color: #0D0D08; }
+    .tag-books   { background: var(--tag-books);   color: #fff; }
+    .tag-music   { background: var(--tag-music);   color: #fff; }
+
+    .tile-title {
+      font-size: 14px; font-weight: 700;
+      line-height: 1.25; color: #fff;
+    }
+    .t1 .tile-title { font-size: 24px; }
+    .t2 .tile-title, .t3 .tile-title { font-size: 15px; }
+
+    .tile-extra {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.35s ease, opacity 0.3s;
+      opacity: 0;
+    }
+    .tile:hover .tile-extra { max-height: 80px; opacity: 1; }
+    .tile-excerpt {
+      font-size: 12px; font-weight: 300;
+      line-height: 1.75; color: rgba(255,255,255,0.8);
+      margin-top: 0.5rem;
+    }
+    .tile-date {
+      font-size: 10px; color: rgba(255,255,255,0.5);
+      margin-top: 0.5rem; display: block;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      grid-column: 1/-1; text-align: center;
+      padding: 5rem 2rem; font-size: 14px;
+      font-weight: 500; display: none;
+    }
+    body.dark  .empty-state { color: rgba(255,255,255,0.25); }
+    body.light .empty-state { color: rgba(0,0,0,0.25); }
+    .empty-state.show { display: block; }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 2rem 2rem 0;
+    }
+    body.dark  .site-footer { color: rgba(255,255,255,0.2); }
+    body.light .site-footer { color: rgba(0,0,0,0.2); }
+    .site-footer span { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+    .footer-dots { display: flex; gap: 5px; }
+    .footer-dot { width: 7px; height: 7px; border-radius: 50%; }
+    body.dark  .footer-dot { background: #333325; }
+    body.light .footer-dot { background: #E0DBC8; }
+    .footer-dot.on { background: var(--mustard) !important; }
+
+    /* ── POST OVERLAY ── */
+    .post-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.4s ease;
+      overflow-y: auto;
+    }
+    .post-overlay.open { opacity: 1; pointer-events: all; }
+    body.dark  .post-overlay { background: #0D0D08; }
+    body.light .post-overlay { background: #FFFFFF; }
+
+    /* ── POST NAV ── */
+    .post-nav {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 1.5rem 2rem;
+      position: sticky; top: 0; z-index: 10;
+    }
+    body.dark  .post-nav { background: #0D0D08; }
+    body.light .post-nav { background: #FFFFFF; }
+
+    .home-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: opacity 0.2s;
+      flex-shrink: 0; border: none; padding: 0;
+    }
+    .home-btn:hover { opacity: 0.65; }
+    body.dark  .home-btn { background: #FFFFFF; color: #0D0D08; }
+    body.light .home-btn { background: #14130C; color: #FFFFFF; }
+    .home-btn svg { width: 18px; height: 18px; display: block; }
+
+    /* ── POST HERO ── */
+    .post-hero {
+      position: relative;
+      width: calc(100% - 4rem); margin: 0 2rem;
+      border-radius: 24px; overflow: hidden;
+      height: 52vh; min-height: 320px; flex-shrink: 0;
+    }
+    .post-hero-img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .post-hero-img-placeholder {
+      width: 100%; height: 100%; display: block;
+    }
+    .post-hero-gradient {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.05) 55%);
+    }
+    .post-hero-content {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 2rem 2.5rem;
+    }
+    .post-hero-tag {
+      display: inline-block;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 5px 13px; border-radius: var(--radius-pill);
+      margin-bottom: 0.75rem;
+    }
+    .post-hero-title {
+      font-size: 32px; font-weight: 800;
+      line-height: 1.15; color: #fff; max-width: 640px;
+    }
+
+    /* ── POST BODY ── */
+    .post-body { padding: 2.5rem 0 4rem; }
+    .post-inner { max-width: 860px; margin: 0 auto; padding: 0 3rem; }
+
+    .post-meta-row {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 2.5rem; padding-bottom: 1.5rem;
+      border-bottom: 1px solid;
+    }
+    body.dark  .post-meta-row { border-color: #252515; }
+    body.light .post-meta-row { border-color: #EBEBEB; }
+    .post-meta-item { font-size: 12px; font-weight: 500; }
+    body.dark  .post-meta-item { color: rgba(255,255,255,0.4); }
+    body.light .post-meta-item { color: #AAAAAA; }
+    .post-meta-sep { width: 3px; height: 3px; border-radius: 50%; }
+    body.dark  .post-meta-sep { background: rgba(255,255,255,0.2); }
+    body.light .post-meta-sep { background: #CCCCCC; }
+
+    .post-lede { font-size: 19px; font-weight: 600; line-height: 1.65; margin-bottom: 1.75rem; }
+    body.dark  .post-lede { color: #FFFFFF; }
+    body.light .post-lede { color: #14130C; }
+
+    .post-p { font-size: 16px; font-weight: 300; line-height: 1.95; margin-bottom: 1.5rem; }
+    body.dark  .post-p { color: rgba(255,255,255,0.7); }
+    body.light .post-p { color: #555548; }
+
+    .post-img-wrap { border-radius: 18px; overflow: hidden; margin: 2.5rem 0 0.75rem; }
+    .post-img-wrap img { width: 100%; display: block; object-fit: cover; max-height: 360px; }
+    .post-img-wrap svg { width: 100%; display: block; }
+    .post-img-caption { font-size: 11px; margin-bottom: 2rem; text-align: center; }
+    body.dark  .post-img-caption { color: rgba(255,255,255,0.28); }
+    body.light .post-img-caption { color: #BBBBAA; }
+
+    .post-pull {
+      font-size: 20px; font-weight: 700; line-height: 1.55;
+      border-left: 3px solid var(--mustard);
+      padding-left: 1.5rem; margin: 2.5rem 0;
+    }
+    body.dark  .post-pull { color: #FFFFFF; }
+    body.light .post-pull { color: #14130C; }
+
+    .post-end {
+      display: flex; align-items: center; gap: 1rem;
+      margin-top: 3rem; padding-top: 2rem; border-top: 1px solid;
+    }
+    body.dark  .post-end { border-color: #252515; }
+    body.light .post-end { border-color: #EBEBEB; }
+    .post-end-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
+    body.dark  .post-end-label { color: rgba(255,255,255,0.3); }
+    body.light .post-end-label { color: #CCCCBB; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .mosaic { grid-template-columns: 1fr 1fr; }
+      .t1 { grid-column: span 2; }
+      .t2, .t3, .t4, .t5, .t6 { grid-column: span 1; grid-row: span 1; }
+      .t1 .tile-img-wrap { min-height: 280px; }
+    }
+  </style>
+</head>
+<body class="dark">
+
+  <!-- ── HOMEPAGE ── -->
+  <div id="homepage">
+    <nav class="nav">
+      <a class="logo" onclick="goHome()">bifi<em>.</em></a>
+      <div class="nav-right">
+        <a href="#" class="nav-about">about</a>
+        <button class="toggle" onclick="toggleMode()">
+          <div class="toggle-dot"></div>
+          <span id="toggle-label">light</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="legend">
+      <div class="legend-item active" data-tag="all" onclick="filterTag('all')">
+        <div class="legend-dot-all"></div>all
+      </div>
+      <div class="legend-item" data-tag="film"    onclick="filterTag('film')">   <div class="legend-dot" style="background:var(--tag-film)"></div>film</div>
+      <div class="legend-item" data-tag="people"  onclick="filterTag('people')"> <div class="legend-dot" style="background:var(--tag-people)"></div>people</div>
+      <div class="legend-item" data-tag="culture" onclick="filterTag('culture')"><div class="legend-dot" style="background:var(--tag-culture)"></div>culture</div>
+      <div class="legend-item" data-tag="history" onclick="filterTag('history')"><div class="legend-dot" style="background:var(--tag-history)"></div>history</div>
+      <div class="legend-item" data-tag="books"   onclick="filterTag('books')">  <div class="legend-dot" style="background:var(--tag-books)"></div>books</div>
+      <div class="legend-item" data-tag="music"   onclick="filterTag('music')">  <div class="legend-dot" style="background:var(--tag-music)"></div>music</div>
+    </div>
+
+    <div class="mosaic" id="mosaic">
+
+      <div class="tile t1" data-tag="film" onclick="openPost('film','The real woman who inspired that scene in Oppenheimer','May 2026','8 min','Her name appeared on screen for barely three seconds. Three hours later I knew her whole story — and it was nothing like I expected.')">
+        <div class="tile-img-wrap" style="min-height:420px">
+          <svg viewBox="0 0 700 420" preserveAspectRatio="xMidYMid slice" style="min-height:420px">
+            <defs><radialGradient id="g1" cx="60%" cy="40%"><stop offset="0%" stop-color="#C4A060"/><stop offset="100%" stop-color="#3A2808"/></radialGradient></defs>
+            <rect width="700" height="420" fill="url(#g1)"/>
+            <circle cx="420" cy="160" r="180" fill="#E8C070" opacity="0.12"/>
+            <rect x="60" y="140" width="180" height="120" rx="8" fill="#2A1C08" opacity="0.5"/>
+            <rect x="80" y="160" width="140" height="8" rx="4" fill="#D4A040" opacity="0.6"/>
+            <rect x="80" y="178" width="100" height="6" rx="3" fill="#D4A040" opacity="0.35"/>
+            <rect x="80" y="194" width="120" height="6" rx="3" fill="#D4A040" opacity="0.35"/>
+          </svg>
+        </div>
+        <div class="tile-overlay">
+          <span class="tile-tag tag-film">film</span>
+          <h2 class="tile-title">The real woman who inspired that scene in Oppenheimer</h2>
+          <div class="tile-extra">
+            <p class="tile-excerpt">Her name appeared on screen for barely three seconds. Three hours later I knew her whole story.</p>
+            <span class="tile-date">May 2026 · 8 min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tile t2" data-tag="people" onclick="openPost('people','Letters found in an attic','Apr 2026','6 min','When historians find a shoebox of letters, they usually find a whole life nobody knew existed.')">
+        <div class="tile-img-wrap" style="min-height:195px">
+          <svg viewBox="0 0 400 195" preserveAspectRatio="xMidYMid slice" style="min-height:195px">
+            <defs><radialGradient id="g2" cx="30%" cy="60%"><stop offset="0%" stop-color="#7AADAA"/><stop offset="100%" stop-color="#0A2825"/></radialGradient></defs>
+            <rect width="400" height="195" fill="url(#g2)"/>
+            <rect x="120" y="50" width="160" height="110" rx="6" fill="#1A4845" opacity="0.6"/>
+            <rect x="140" y="70" width="120" height="6" rx="3" fill="#7ACDCA" opacity="0.5"/>
+            <rect x="140" y="86" width="90"  height="5" rx="2" fill="#7ACDCA" opacity="0.3"/>
+            <rect x="140" y="100" width="105" height="5" rx="2" fill="#7ACDCA" opacity="0.3"/>
+          </svg>
+        </div>
+        <div class="tile-overlay">
+          <span class="tile-tag tag-people">people</span>
+          <h2 class="tile-title">Letters found in an attic</h2>
+          <div class="tile-extra">
+            <p class="tile-excerpt">When historians find a shoebox, they usually find a whole life nobody knew existed.</p>
+            <span class="tile-date">Apr 2026 · 6 min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tile t3" data-tag="culture" onclick="openPost('culture','Why everyone had the same strange hobby in 1973','Mar 2026','10 min','A throwaway sitcom joke sent me down a rabbit hole about collective behaviour, loneliness, and what people do with their hands.')">
+        <div class="tile-img-wrap" style="min-height:195px">
+          <svg viewBox="0 0 400 195" preserveAspectRatio="xMidYMid slice" style="min-height:195px">
+            <defs><radialGradient id="g3" cx="70%" cy="30%"><stop offset="0%" stop-color="#9A70C8"/><stop offset="100%" stop-color="#180A28"/></radialGradient></defs>
+            <rect width="400" height="195" fill="url(#g3)"/>
+            <circle cx="200" cy="97" r="60" fill="#7040A0" opacity="0.25"/>
+            <circle cx="200" cy="97" r="35" fill="#9060C0" opacity="0.3"/>
+            <circle cx="200" cy="97" r="15" fill="#C090E0" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="tile-overlay">
+          <span class="tile-tag tag-culture">culture</span>
+          <h2 class="tile-title">Why everyone had the same strange hobby in 1973</h2>
+          <div class="tile-extra">
+            <p class="tile-excerpt">A sitcom joke sent me down a rabbit hole about loneliness and collective behaviour.</p>
+            <span class="tile-date">Mar 2026 · 10 min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tile t4" data-tag="books" onclick="openPost('books','The village that chose to disappear','Feb 2026','7 min','I finished the book in one sitting. Then spent the next two days researching the real place it was based on.')">
+        <div class="tile-img-wrap" style="min-height:230px">
+          <svg viewBox="0 0 340 420" preserveAspectRatio="xMidYMid slice" style="min-height:230px">
+            <defs><linearGradient id="g4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1A3860"/><stop offset="100%" stop-color="#0A1828"/></linearGradient></defs>
+            <rect width="340" height="420" fill="url(#g4)"/>
+            <rect x="80" y="60" width="180" height="240" rx="6" fill="#1E4070" opacity="0.6"/>
+            <rect x="100" y="80" width="140" height="8" rx="4" fill="#5A90D0" opacity="0.5"/>
+            <rect x="100" y="98" width="100" height="5" rx="2" fill="#5A90D0" opacity="0.3"/>
+            <rect x="100" y="112" width="120" height="5" rx="2" fill="#5A90D0" opacity="0.3"/>
+          </svg>
+        </div>
+        <div class="tile-overlay">
+          <span class="tile-tag tag-books">books</span>
+          <h2 class="tile-title">The village that chose to disappear</h2>
+          <div class="tile-extra">
+            <p class="tile-excerpt">I finished it in one sitting. Then spent two days on the real place.</p>
+            <span class="tile-date">Feb 2026 · 7 min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tile t5" data-tag="history" onclick="openPost('history','The last woman who remembered everything','Jan 2026','9 min','A condition so rare only 60 people in the world have ever been diagnosed with it. She was one of them — and her story undid me.')">
+        <div class="tile-img-wrap" style="min-height:230px">
+          <svg viewBox="0 0 340 420" preserveAspectRatio="xMidYMid slice" style="min-height:230px">
+            <defs><radialGradient id="g5" cx="50%" cy="50%"><stop offset="0%" stop-color="#C89030"/><stop offset="100%" stop-color="#281800"/></radialGradient></defs>
+            <rect width="340" height="420" fill="url(#g5)"/>
+            <circle cx="170" cy="180" r="100" fill="#D4A030" opacity="0.1"/>
+            <circle cx="170" cy="180" r="65"  fill="#D4A030" opacity="0.08"/>
+            <circle cx="170" cy="180" r="35"  fill="#D4A030" opacity="0.12"/>
+          </svg>
+        </div>
+        <div class="tile-overlay">
+          <span class="tile-tag tag-history">history</span>
+          <h2 class="tile-title">The last woman who remembered everything</h2>
+          <div class="tile-extra">
+            <p class="tile-excerpt">A condition so rare only 60 people in the world have been diagnosed. She was one of them.</p>
+            <span class="tile-date">Jan 2026 · 9 min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tile t6" data-tag="music" onclick="openPost('music','The song that accidentally predicted a revolution','Dec 2025','6 min','It was meant to be a throwaway B-side. Instead it became an anthem nobody planned for — heard everywhere, owned by no one.')">
+        <div class="tile-img-wrap" style="min-height:230px">
+          <svg viewBox="0 0 340 420" preserveAspectRatio="xMidYMid slice" style="min-height:230px">
+            <defs><linearGradient id="g6" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#0A2840"/><stop offset="100%" stop-color="#1A5080"/></linearGradient></defs>
+            <rect width="340" height="420" fill="url(#g6)"/>
+            <rect x="60"  y="100" width="4" height="180" rx="2" fill="#3A90D0" opacity="0.4"/>
+            <rect x="90"  y="130" width="4" height="120" rx="2" fill="#3A90D0" opacity="0.3"/>
+            <rect x="120" y="80"  width="4" height="220" rx="2" fill="#3A90D0" opacity="0.5"/>
+            <rect x="150" y="110" width="4" height="160" rx="2" fill="#3A90D0" opacity="0.35"/>
+            <rect x="180" y="60"  width="4" height="260" rx="2" fill="#3A90D0" opacity="0.45"/>
+            <rect x="210" y="120" width="4" height="140" rx="2" fill="#3A90D0" opacity="0.3"/>
+            <rect x="240" y="90"  width="4" height="200" rx="2" fill="#3A90D0" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="tile-overlay">
+          <span class="tile-tag tag-music">music</span>
+          <h2 class="tile-title">The song that accidentally predicted a revolution</h2>
+          <div class="tile-extra">
+            <p class="tile-excerpt">A throwaway B-side that became an anthem nobody planned for.</p>
+            <span class="tile-date">Dec 2025 · 6 min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" id="empty-state">no essays in this category yet</div>
+    </div>
+
+    <footer class="site-footer">
+      <span>beforeiforgetit.com</span>
+      <div class="footer-dots">
+        <div class="footer-dot on"></div>
+        <div class="footer-dot"></div>
+        <div class="footer-dot"></div>
+      </div>
+      <span>by amelia</span>
+    </footer>
+  </div>
+
+  <!-- ── POST PAGE ── -->
+  <div class="post-overlay" id="post-overlay">
+    <nav class="post-nav">
+      <button class="home-btn" id="home-btn" onclick="goHome()" aria-label="Go to homepage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/>
+          <path d="M9 21V12h6v9"/>
+        </svg>
+      </button>
+      <button class="toggle" onclick="toggleMode()">
+        <div class="toggle-dot"></div>
+        <span id="post-toggle-label">light</span>
+      </button>
+    </nav>
+
+    <div class="post-hero">
+      <svg id="post-hero-svg" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;position:absolute;inset:0;display:block;"></svg>
+      <div class="post-hero-gradient"></div>
+      <div class="post-hero-content">
+        <span class="post-hero-tag" id="post-tag"></span>
+        <h1 class="post-hero-title" id="post-title"></h1>
+      </div>
+    </div>
+
+    <div class="post-body">
+      <div class="post-inner">
+        <div class="post-meta-row">
+          <span class="post-meta-item" id="post-date"></span>
+          <div class="post-meta-sep"></div>
+          <span class="post-meta-item" id="post-read"></span>
+          <div class="post-meta-sep"></div>
+          <span class="post-meta-item">by amelia</span>
+        </div>
+        <p class="post-lede" id="post-lede"></p>
+        <p class="post-p">I did what I always do. I paused. I went to my phone. Three hours later I was reading a digitised archive and I had completely forgotten what I originally searched for.</p>
+        <p class="post-p">This is the part that gets me every time — how much ordinary life exists just underneath the surface of the historical record. The dates, the events, the famous names. And then below that: cafés, letters, favourite songs, small daily rituals nobody thought to preserve.</p>
+        <div class="post-img-wrap">
+          <svg id="post-inline-svg" viewBox="0 0 580 280" style="width:100%;display:block;border-radius:18px;"></svg>
+        </div>
+        <p class="post-img-caption">your image caption goes here</p>
+        <div class="post-pull">"The most interesting people are always the ones just out of frame."</div>
+        <p class="post-p">What rabbit holes do to me is this: they start with a name on a screen and end with me feeling like I've sat across from someone who lived and breathed and was mostly forgotten. I don't think that's a small thing.</p>
+        <p class="post-p">And so I write it down. Before I forget it.</p>
+        <div class="post-end">
+          <span class="post-end-label">tagged</span>
+          <span id="post-end-tag" style="display:inline-block;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 11px;border-radius:100px;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ── DATA ── */
+    const TAG_COLORS = {
+      film:    { bg: '#E8442A', text: '#fff' },
+      people:  { bg: '#2A9E6A', text: '#fff' },
+      culture: { bg: '#7C4DE8', text: '#fff' },
+      history: { bg: '#D4B800', text: '#0D0D08' },
+      books:   { bg: '#E8762A', text: '#fff' },
+      music:   { bg: '#2A7CE8', text: '#fff' },
+    };
+
+    const HERO_SVGS = {
+      film:    `<defs><radialGradient id="hg" cx="60%" cy="40%"><stop offset="0%" stop-color="#C4A060"/><stop offset="100%" stop-color="#3A2808"/></radialGradient></defs><rect width="640" height="300" fill="url(#hg)"/><circle cx="480" cy="120" r="160" fill="#E8C070" opacity="0.1"/><rect x="60" y="80" width="220" height="140" rx="8" fill="#2A1C08" opacity="0.5"/><rect x="85" y="108" width="170" height="10" rx="5" fill="#D4A040" opacity="0.6"/>`,
+      people:  `<defs><radialGradient id="hg" cx="30%" cy="60%"><stop offset="0%" stop-color="#7AADAA"/><stop offset="100%" stop-color="#0A2825"/></radialGradient></defs><rect width="640" height="300" fill="url(#hg)"/><rect x="180" y="60" width="280" height="180" rx="8" fill="#1A4845" opacity="0.55"/><rect x="210" y="90" width="220" height="9" rx="4" fill="#7ACDCA" opacity="0.5"/>`,
+      culture: `<defs><radialGradient id="hg" cx="70%" cy="30%"><stop offset="0%" stop-color="#9A70C8"/><stop offset="100%" stop-color="#180A28"/></radialGradient></defs><rect width="640" height="300" fill="url(#hg)"/><circle cx="320" cy="150" r="100" fill="#7040A0" opacity="0.2"/><circle cx="320" cy="150" r="60" fill="#9060C0" opacity="0.25"/><circle cx="320" cy="150" r="25" fill="#C090E0" opacity="0.35"/>`,
+      history: `<defs><radialGradient id="hg" cx="50%" cy="50%"><stop offset="0%" stop-color="#C89030"/><stop offset="100%" stop-color="#281800"/></radialGradient></defs><rect width="640" height="300" fill="url(#hg)"/><circle cx="320" cy="150" r="120" fill="#D4A030" opacity="0.08"/><circle cx="320" cy="150" r="75" fill="#D4A030" opacity="0.07"/><circle cx="320" cy="150" r="38" fill="#D4A030" opacity="0.1"/>`,
+      books:   `<defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1A3860"/><stop offset="100%" stop-color="#0A1828"/></linearGradient></defs><rect width="640" height="300" fill="url(#hg)"/><rect x="160" y="40" width="320" height="200" rx="8" fill="#1E4070" opacity="0.55"/><rect x="190" y="70" width="260" height="10" rx="5" fill="#5A90D0" opacity="0.5"/>`,
+      music:   `<defs><linearGradient id="hg" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#0A2840"/><stop offset="100%" stop-color="#1A5080"/></linearGradient></defs><rect width="640" height="300" fill="url(#hg)"/><rect x="80"  y="60"  width="6" height="180" rx="3" fill="#3A90D0" opacity="0.4"/><rect x="120" y="90"  width="6" height="120" rx="3" fill="#3A90D0" opacity="0.3"/><rect x="160" y="40"  width="6" height="220" rx="3" fill="#3A90D0" opacity="0.5"/><rect x="200" y="80"  width="6" height="140" rx="3" fill="#3A90D0" opacity="0.35"/><rect x="240" y="30"  width="6" height="240" rx="3" fill="#3A90D0" opacity="0.45"/><rect x="280" y="100" width="6" height="100" rx="3" fill="#3A90D0" opacity="0.3"/><rect x="320" y="50"  width="6" height="200" rx="3" fill="#3A90D0" opacity="0.4"/>`,
+    };
+
+    /* ── THEME ── */
+    function updateThemeUI(isDark) {
+      const lbl = isDark ? 'light' : 'dark';
+      document.querySelectorAll('#toggle-label, #post-toggle-label').forEach(el => el.textContent = lbl);
+      const homeBtnStyle = document.getElementById('home-btn').style;
+      homeBtnStyle.background = isDark ? '#FFFFFF' : '#14130C';
+      homeBtnStyle.color      = isDark ? '#0D0D08' : '#FFFFFF';
+    }
+
+    function toggleMode() {
+      const isDark = document.body.classList.toggle('dark');
+      document.body.classList.toggle('light', !isDark);
+      updateThemeUI(isDark);
+    }
+
+    /* ── FILTER ── */
+    function filterTag(tag) {
+      document.querySelectorAll('.legend-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.tag === tag);
+      });
+      let visible = 0;
+      document.querySelectorAll('.tile').forEach(tile => {
+        const show = tag === 'all' || tile.dataset.tag === tag;
+        tile.classList.toggle('hidden', !show);
+        if (show) visible++;
+      });
+      document.getElementById('empty-state').classList.toggle('show', visible === 0);
+    }
+
+    /* ── POST ── */
+    function openPost(tag, title, date, readTime, lede) {
+      const overlay = document.getElementById('post-overlay');
+      const tc = TAG_COLORS[tag];
+
+      document.getElementById('post-hero-svg').innerHTML    = HERO_SVGS[tag];
+      document.getElementById('post-inline-svg').innerHTML  = HERO_SVGS[tag];
+      document.getElementById('post-title').textContent     = title;
+      document.getElementById('post-lede').textContent      = lede;
+      document.getElementById('post-date').textContent      = date;
+      document.getElementById('post-read').textContent      = readTime + ' read';
+
+      ['post-tag', 'post-end-tag'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent       = tag;
+        el.style.background  = tc.bg;
+        el.style.color       = tc.text;
+      });
+
+      overlay.classList.add('open');
+      overlay.scrollTop = 0;
+    }
+
+    function goHome() {
+      document.getElementById('post-overlay').classList.remove('open');
+      filterTag('all');
+    }
+
+    /* ── INIT ── */
+    updateThemeUI(true);
+  </script>
+</body>
+</html>
