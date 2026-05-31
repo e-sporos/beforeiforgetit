@@ -1,6 +1,6 @@
-const { Client } = require('@notionhq/client').default || require('@notionhq/client');
+cconst notionPkg = require("@notionhq/client");
+const Client = notionPkg.Client || (notionPkg.default && notionPkg.default.Client);
 const fs = require('fs');
-const path = require('path');
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const DATABASE_ID = process.env.NOTION_DATABASE_ID;
