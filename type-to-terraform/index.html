@@ -204,6 +204,22 @@ const FEATURE_WORDS = {
   desert: ['desert', 'sand', 'dune', 'dunes']
 };
 
+const OBJECT_WORDS = {
+  cat: ['cat', 'cats', 'kitten', 'kittens'],
+  dog: ['dog', 'dogs', 'puppy', 'puppies'],
+  fox: ['fox', 'foxes'],
+  rabbit: ['rabbit', 'rabbits', 'bunny', 'bunnies'],
+  owl: ['owl', 'owls'],
+  fish: ['fish', 'fishes'],
+  sheep: ['sheep', 'lamb', 'lambs'],
+  car: ['car', 'cars', 'truck', 'trucks']
+};
+
+const DEFAULT_OBJECT_COLORS = {
+  cat: '#8a8a8a', dog: '#8a5a2f', fox: '#d9772a', rabbit: '#d8d0c0',
+  owl: '#8a7050', fish: '#3a90d0', sheep: '#eee8da', car: '#c0392b'
+};
+
 function xmur3(str) {
   let h = 1779033703 ^ str.length;
   for (let i = 0; i < str.length; i++) {
@@ -230,16 +246,17 @@ function analyzeSentence(sentence) {
   const tokens = (sentence.toLowerCase().match(/[a-z']+/g) || []);
   const content = tokens.filter(w => !STOPWORDS.has(w) && w.length > 1);
 
-  const colors = [];
+  const colorHits = [];
   const skyMatches = new Set();
   const features = {};
+  const objectHits = [];
   const glyphs = [];
 
   const words = content.length ? content : ['quiet', 'still', 'world'];
 
-  for (const word of words) {
+  words.forEach((word, idx) => {
     let matched = false;
-    if (COLOR_WORDS[word]) { colors.push(COLOR_WORDS[word]); matched = true; }
+    if (COLOR_WORDS[word]) { colorHits.push({ idx, hex: COLOR_WORDS[word] }); matched = true; }
     for (const [cat, list] of SKY_CATEGORIES) {
       if (list.includes(word)) { skyMatches.add(cat); matched = true; }
     }
@@ -249,15 +266,34 @@ function analyzeSentence(sentence) {
         matched = true;
       }
     }
+    for (const [species, list] of Object.entries(OBJECT_WORDS)) {
+      if (list.includes(word)) { objectHits.push({ idx, species }); matched = true; }
+    }
     if (!matched) glyphs.push(word);
-  }
+  });
 
   let sky = 'day';
   for (const [cat] of SKY_CATEGORIES) {
     if (skyMatches.has(cat)) { sky = cat; break; }
   }
 
-  return { words, colors, sky, features, glyphs: glyphs.slice(0, 6) };
+  const consumedColorIdx = new Set();
+  const objects = objectHits.slice(0, 5).map(({ idx, species }) => {
+    let nearestHit = null, best = Infinity;
+    for (const hit of colorHits) {
+      const d = Math.abs(hit.idx - idx);
+      if (d < best) { best = d; nearestHit = hit; }
+    }
+    if (nearestHit && best <= 1) {
+      consumedColorIdx.add(nearestHit.idx);
+      return { species, color: nearestHit.hex };
+    }
+    return { species, color: DEFAULT_OBJECT_COLORS[species] };
+  });
+
+  const terrainColors = colorHits.filter(h => !consumedColorIdx.has(h.idx)).map(h => h.hex);
+
+  return { words, colors: terrainColors, sky, features, objects, glyphs: glyphs.slice(0, 6) };
 }
 
 function hashWord(word) {
@@ -497,6 +533,186 @@ function drawGlyph(x, y, word, rng) {
   ctx.restore();
 }
 
+function relLuminance(rgb) {
+  const [r, g, b] = rgb.map(c => c / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function shade(rgb, f) { return rgb.map(c => c * f); }
+function detailColor(rgb) {
+  return relLuminance(rgb) > 0.55 ? 'rgba(35,32,28,0.9)' : 'rgba(245,240,225,0.92)';
+}
+
+function drawCat(x, y, scale, rgb) {
+  const body = rgbToCss(rgb), dark = rgbToCss(shade(rgb, 0.75)), eye = detailColor(rgb);
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(-11 * scale, -6 * scale);
+  ctx.quadraticCurveTo(-20 * scale, -18 * scale, -10 * scale, -22 * scale);
+  ctx.quadraticCurveTo(-15 * scale, -14 * scale, -8 * scale, -8 * scale);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, -8 * scale, 12 * scale, 8 * scale, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(10 * scale, -15 * scale, 6.5 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(5 * scale, -19 * scale); ctx.lineTo(7 * scale, -26 * scale); ctx.lineTo(10 * scale, -19.5 * scale);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(11 * scale, -19.5 * scale); ctx.lineTo(15 * scale, -25 * scale); ctx.lineTo(16 * scale, -18 * scale);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = dark;
+  for (const lx of [-7, -2, 4, 9]) ctx.fillRect(lx * scale, -3 * scale, 2.4 * scale, 5 * scale);
+  ctx.fillStyle = eye;
+  ctx.beginPath(); ctx.arc(13 * scale, -16 * scale, 1 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawDog(x, y, scale, rgb) {
+  const body = rgbToCss(rgb), dark = rgbToCss(shade(rgb, 0.75)), eye = detailColor(rgb);
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(-10 * scale, -8 * scale);
+  ctx.quadraticCurveTo(-19 * scale, -6 * scale, -14 * scale, -20 * scale);
+  ctx.quadraticCurveTo(-10 * scale, -14 * scale, -7 * scale, -9 * scale);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, -8 * scale, 13 * scale, 8.5 * scale, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(11 * scale, -14 * scale, 6.5 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(15 * scale, -13 * scale, 5 * scale, 4 * scale);
+  ctx.fillStyle = dark;
+  ctx.beginPath(); ctx.ellipse(6 * scale, -18 * scale, 2.6 * scale, 4.5 * scale, -0.3, 0, Math.PI * 2); ctx.fill();
+  for (const lx of [-8, -3, 4, 9]) ctx.fillRect(lx * scale, -2 * scale, 2.6 * scale, 5.5 * scale);
+  ctx.fillStyle = eye;
+  ctx.beginPath(); ctx.arc(14 * scale, -15 * scale, 1 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawFox(x, y, scale, rgb) {
+  const body = rgbToCss(rgb), dark = rgbToCss(shade(rgb, 0.7)), eye = detailColor(rgb);
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(-9 * scale, -7 * scale);
+  ctx.quadraticCurveTo(-24 * scale, -10 * scale, -18 * scale, -22 * scale);
+  ctx.quadraticCurveTo(-13 * scale, -16 * scale, -7 * scale, -9 * scale);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(245,240,225,0.92)';
+  ctx.beginPath(); ctx.arc(-19 * scale, -19 * scale, 3.2 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(0, -7 * scale, 11 * scale, 7.5 * scale, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(10 * scale, -14 * scale, 5.5 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(14 * scale, -14 * scale); ctx.lineTo(21 * scale, -12 * scale); ctx.lineTo(14 * scale, -10 * scale); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(6 * scale, -18 * scale); ctx.lineTo(7 * scale, -25 * scale); ctx.lineTo(10.5 * scale, -19 * scale);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = dark;
+  for (const lx of [-7, -2, 4, 9]) ctx.fillRect(lx * scale, -2.5 * scale, 2.2 * scale, 5 * scale);
+  ctx.fillStyle = eye;
+  ctx.beginPath(); ctx.arc(12 * scale, -15 * scale, 0.9 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawRabbit(x, y, scale, rgb) {
+  const body = rgbToCss(rgb), dark = rgbToCss(shade(rgb, 0.8)), eye = detailColor(rgb);
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(0, -8 * scale, 10 * scale, 9 * scale, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(8 * scale, -17 * scale, 5.5 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(5 * scale, -28 * scale, 2.2 * scale, 9 * scale, -0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(11 * scale, -28 * scale, 2.2 * scale, 9 * scale, 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.arc(-8 * scale, -3 * scale, 3 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = dark;
+  ctx.fillRect(-3 * scale, -2 * scale, 3 * scale, 5 * scale);
+  ctx.fillRect(6 * scale, -2 * scale, 4 * scale, 6 * scale);
+  ctx.fillStyle = eye;
+  ctx.beginPath(); ctx.arc(11 * scale, -18 * scale, 0.9 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawOwl(x, y, scale, rgb) {
+  const body = rgbToCss(rgb), dark = rgbToCss(shade(rgb, 0.7)), eye = detailColor(rgb);
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.arc(0, -14 * scale, 13 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-9 * scale, -25 * scale); ctx.lineTo(-6 * scale, -18 * scale); ctx.lineTo(-11 * scale, -18 * scale); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(9 * scale, -25 * scale); ctx.lineTo(11 * scale, -18 * scale); ctx.lineTo(6 * scale, -18 * scale); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = dark;
+  ctx.beginPath(); ctx.ellipse(0, -10 * scale, 9 * scale, 6 * scale, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(245,240,225,0.95)';
+  ctx.beginPath(); ctx.arc(-5 * scale, -16 * scale, 3.4 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5 * scale, -16 * scale, 3.4 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = eye;
+  ctx.beginPath(); ctx.arc(-5 * scale, -16 * scale, 1.4 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5 * scale, -16 * scale, 1.4 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#d98a2a';
+  ctx.beginPath(); ctx.moveTo(-2 * scale, -12 * scale); ctx.lineTo(2 * scale, -12 * scale); ctx.lineTo(0, -8 * scale); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function drawFish(x, y, scale, rgb) {
+  const body = rgbToCss(rgb), dark = rgbToCss(shade(rgb, 0.75)), eye = detailColor(rgb);
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(0, 0, 13 * scale, 7 * scale, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-13 * scale, 0); ctx.lineTo(-20 * scale, -6 * scale); ctx.lineTo(-20 * scale, 6 * scale);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = dark;
+  ctx.beginPath(); ctx.moveTo(3 * scale, -6 * scale); ctx.lineTo(6 * scale, -11 * scale); ctx.lineTo(8 * scale, -5.5 * scale); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = eye;
+  ctx.beginPath(); ctx.arc(9 * scale, -1.5 * scale, 1.3 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawSheep(x, y, scale, rgb) {
+  const body = rgbToCss(rgb), dark = rgbToCss(shade(rgb, 0.55)), eye = detailColor(rgb);
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = body;
+  for (const [cx, cy, r] of [[-8, -10, 6], [0, -13, 7.5], [8, -9, 6], [-2, -6, 7], [5, -5, 6]]) {
+    ctx.beginPath(); ctx.arc(cx * scale, cy * scale, r * scale, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = dark;
+  ctx.beginPath(); ctx.ellipse(-13 * scale, -8 * scale, 4 * scale, 3 * scale, 0, 0, Math.PI * 2); ctx.fill();
+  for (const lx of [-5, 0, 5, 9]) ctx.fillRect(lx * scale, -1 * scale, 2 * scale, 5 * scale);
+  ctx.fillStyle = eye;
+  ctx.beginPath(); ctx.arc(-14.5 * scale, -9 * scale, 0.9 * scale, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawCar(x, y, scale, rgb) {
+  const body = rgbToCss(rgb), dark = rgbToCss(shade(rgb, 0.6));
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-20 * scale, -14 * scale, 40 * scale, 12 * scale, 3 * scale);
+  else ctx.rect(-20 * scale, -14 * scale, 40 * scale, 12 * scale);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-11 * scale, -14 * scale); ctx.lineTo(-6 * scale, -22 * scale); ctx.lineTo(9 * scale, -22 * scale); ctx.lineTo(13 * scale, -14 * scale);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(200,225,235,0.7)';
+  ctx.beginPath(); ctx.moveTo(-4 * scale, -14 * scale); ctx.lineTo(-1 * scale, -20 * scale); ctx.lineTo(8 * scale, -20 * scale); ctx.lineTo(10 * scale, -14 * scale); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = dark;
+  for (const wx of [-12, 12]) {
+    ctx.beginPath(); ctx.arc(wx * scale, -2 * scale, 5 * scale, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = '#c8c8c0';
+  for (const wx of [-12, 12]) {
+    ctx.beginPath(); ctx.arc(wx * scale, -2 * scale, 2 * scale, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+const OBJECT_DRAWERS = {
+  cat: drawCat, dog: drawDog, fox: drawFox, rabbit: drawRabbit,
+  owl: drawOwl, fish: drawFish, sheep: drawSheep, car: drawCar
+};
+
+function drawObject(species, x, y, scale, colorHex) {
+  const draw = OBJECT_DRAWERS[species];
+  if (draw) draw(x, y, scale, hexToRgb(colorHex));
+}
+
 function generateWorld(sentence) {
   const seedFn = xmur3(sentence || 'a quiet still world');
   const rng = mulberry32(seedFn());
@@ -565,6 +781,14 @@ function generateWorld(sentence) {
       const fy = nearY(fx) + 4 + rng() * 10;
       if (fy < H) drawFlower(fx, fy, rng() * 360);
     }
+  }
+
+  const objectCount = analysis.objects.length;
+  for (let i = 0; i < objectCount; i++) {
+    const ox = W * ((i + 0.5) / objectCount) + (rng() - 0.5) * 40;
+    const oy = nearY(ox) + 2;
+    const scale = 0.9 + rng() * 0.5;
+    drawObject(analysis.objects[i].species, ox, oy, scale, analysis.objects[i].color);
   }
 
   const glyphCount = Math.min(analysis.glyphs.length, 5);
