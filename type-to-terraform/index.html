@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>type → terraform</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    background: #0D0D08;
+    color: #FFFFFF;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 3rem 1.25rem 4rem;
+  }
+  .wrap { width: 100%; max-width: 760px; }
+  header { text-align: center; margin-bottom: 2rem; }
+  h1 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  h1 span { color: #D4B800; }
+  header p {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    opacity: 0.55;
+  }
+  form {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+  input[type="text"] {
+    flex: 1;
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 14px;
+    border: 1.5px solid #333325;
+    background: #16160D;
+    color: #FFFFFF;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: #D4B800; }
+  input[type="text"]::placeholder { color: #6a6a55; }
+  button {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    border-radius: 14px;
+    padding: 0.9rem 1.3rem;
+    background: #D4B800;
+    color: #0D0D08;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  button:hover { opacity: 0.85; }
+  button:active { transform: scale(0.97); }
+  .ghost {
+    background: none;
+    border: 1.5px solid #333325;
+    color: #FFFFFF;
+    text-transform: none;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+  .ghost:hover { border-color: #D4B800; opacity: 1; }
+  .stage {
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1.5px solid #232316;
+    background: #000;
+    line-height: 0;
+  }
+  canvas { width: 100%; height: auto; display: block; }
+  .caption {
+    text-align: center;
+    font-size: 0.85rem;
+    font-style: italic;
+    opacity: 0.5;
+    margin-top: 0.9rem;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 1.1rem;
+    flex-wrap: wrap;
+  }
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #D4B800;
+    color: #0D0D08;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 100px;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .log {
+    margin-top: 2.5rem;
+  }
+  .log-label {
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    opacity: 0.4;
+    margin-bottom: 0.7rem;
+  }
+  .log-row {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    padding-bottom: 0.4rem;
+  }
+  .log-item {
+    flex: 0 0 auto;
+    width: 92px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1.5px solid #232316;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s, border-color 0.2s;
+  }
+  .log-item:hover { opacity: 1; border-color: #D4B800; }
+  .log-item img { width: 100%; display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>type <span>→</span> terraform</h1>
+    <p>type a sentence, get a tiny world</p>
+  </header>
+
+  <form id="form">
+    <input type="text" id="sentence" maxlength="140" placeholder="a quiet stone cottage under a starry winter sky" autocomplete="off"/>
+    <button type="submit">Terraform</button>
+  </form>
+
+  <div class="stage">
+    <canvas id="canvas" width="1000" height="560"></canvas>
+  </div>
+  <p class="caption" id="caption"></p>
+
+  <div class="controls">
+    <button class="ghost" id="download">Download PNG</button>
+    <button class="ghost" id="copyLink">Copy Link</button>
+  </div>
+
+  <div class="log">
+    <div class="log-label">previous worlds</div>
+    <div class="log-row" id="logRow"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+const STOPWORDS = new Set(['a','an','the','and','or','but','of','in','on','at','to','for','with','is','was','were','are','be','been','it','its','this','that','these','those','my','your','his','her','their','our','i','you','he','she','we','they','as','by','from','so','if','then','than','not','no','yes','just','very','really','quite','there','here','all','some']);
+
+const COLOR_WORDS = {
+  red: '#c0392b', crimson: '#8e1b2b', orange: '#d9772a', amber: '#d4900a',
+  yellow: '#d4b800', gold: '#caa53d', golden: '#caa53d', green: '#3a7d44',
+  emerald: '#1f8a5f', blue: '#2a6fbb', azure: '#3a90d0', purple: '#7c4de8',
+  violet: '#7c4de8', indigo: '#4b3c8c', pink: '#e07a9e', rose: '#e0698a',
+  brown: '#6b4a2f', black: '#1a1a1a', white: '#f0f0f0', grey: '#8a8a80',
+  gray: '#8a8a80', silver: '#b8b8b8', teal: '#2a9e8f', cyan: '#3ac8d0'
+};
+
+const SKY_CATEGORIES = [
+  ['night', ['night', 'midnight', 'dark', 'darkness', 'moon', 'moonlit', 'star', 'stars', 'starry']],
+  ['storm', ['storm', 'stormy', 'thunder', 'lightning']],
+  ['rain', ['rain', 'raining', 'rainy', 'drizzle', 'wet']],
+  ['snow', ['snow', 'snowy', 'winter', 'frost', 'frosty', 'ice', 'icy']],
+  ['fog', ['fog', 'foggy', 'mist', 'misty', 'haze', 'hazy']],
+  ['dawn', ['dawn', 'sunrise', 'morning']],
+  ['dusk', ['dusk', 'sunset', 'evening', 'twilight']]
+];
+
+const FEATURE_WORDS = {
+  trees: ['tree', 'trees', 'forest', 'forests', 'woods', 'pine', 'pines', 'jungle'],
+  mountains: ['mountain', 'mountains', 'peak', 'peaks', 'cliff', 'cliffs', 'hill', 'hills'],
+  water: ['river', 'rivers', 'lake', 'lakes', 'ocean', 'sea', 'water', 'stream', 'pond', 'waterfall'],
+  structures: ['house', 'houses', 'home', 'village', 'villages', 'town', 'towns', 'city', 'cities', 'tower', 'towers', 'castle', 'castles', 'cabin', 'cabins', 'cottage', 'cottages', 'church', 'churches', 'building', 'buildings'],
+  flowers: ['flower', 'flowers', 'garden', 'meadow', 'field', 'fields', 'grass'],
+  birds: ['bird', 'birds', 'crow', 'crows', 'geese', 'swan', 'swans'],
+  boats: ['boat', 'boats', 'ship', 'ships', 'sail', 'sailing'],
+  desert: ['desert', 'sand', 'dune', 'dunes']
+};
+
+function xmur3(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function () {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return h >>> 0;
+  };
+}
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function analyzeSentence(sentence) {
+  const tokens = (sentence.toLowerCase().match(/[a-z']+/g) || []);
+  const content = tokens.filter(w => !STOPWORDS.has(w) && w.length > 1);
+
+  const colors = [];
+  const skyMatches = new Set();
+  const features = {};
+  const glyphs = [];
+
+  const words = content.length ? content : ['quiet', 'still', 'world'];
+
+  for (const word of words) {
+    let matched = false;
+    if (COLOR_WORDS[word]) { colors.push(COLOR_WORDS[word]); matched = true; }
+    for (const [cat, list] of SKY_CATEGORIES) {
+      if (list.includes(word)) { skyMatches.add(cat); matched = true; }
+    }
+    for (const [feat, list] of Object.entries(FEATURE_WORDS)) {
+      if (list.includes(word)) {
+        features[feat] = (features[feat] || 0) + 1;
+        matched = true;
+      }
+    }
+    if (!matched) glyphs.push(word);
+  }
+
+  let sky = 'day';
+  for (const [cat] of SKY_CATEGORIES) {
+    if (skyMatches.has(cat)) { sky = cat; break; }
+  }
+
+  return { words, colors, sky, features, glyphs: glyphs.slice(0, 6) };
+}
+
+function hashWord(word) {
+  const h = xmur3(word)();
+  return h;
+}
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const HORIZON = H * 0.6;
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function hexToRgb(hex) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgbToCss([r, g, b], a = 1) { return `rgba(${r|0},${g|0},${b|0},${a})`; }
+function mixColors(hexList, fallback, t) {
+  if (!hexList.length) return fallback;
+  const idx = Math.floor(t * hexList.length) % hexList.length;
+  return hexToRgb(hexList[idx]);
+}
+
+function drawSky(rng, sky, palette) {
+  const grads = {
+    day:    ['#8ec9e8', '#d9edf2'],
+    dawn:   ['#f2a35c', '#fbe0a6'],
+    dusk:   ['#4a2c5e', '#e08a5c'],
+    night:  ['#080a20', '#1c2748'],
+    storm:  ['#33323d', '#5c5f6b'],
+    rain:   ['#3f4a5c', '#79879a'],
+    snow:   ['#c7d3de', '#eef3f6'],
+    fog:    ['#a9aeb0', '#dcdedd']
+  };
+  const [top, bottom] = grads[sky] || grads.day;
+  const g = ctx.createLinearGradient(0, 0, 0, HORIZON);
+  g.addColorStop(0, top);
+  g.addColorStop(1, bottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  if (sky === 'night') {
+    for (let i = 0; i < 70; i++) {
+      const x = rng() * W, y = rng() * HORIZON * 0.9;
+      const r = rng() * 1.6 + 0.3;
+      ctx.fillStyle = `rgba(255,255,255,${0.4 + rng() * 0.6})`;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    drawGlow(W * (0.15 + rng() * 0.7), HORIZON * 0.25, 46, '#f4f0d8');
+  } else if (sky === 'dawn' || sky === 'dusk') {
+    drawGlow(W * 0.5, HORIZON * 0.85, 60, '#fff3d0');
+  } else if (sky === 'day') {
+    drawGlow(W * 0.82, HORIZON * 0.2, 44, '#fff6c8');
+    for (let i = 0; i < 3; i++) drawCloud(rng() * W, HORIZON * (0.15 + rng() * 0.3), 40 + rng() * 40, rng);
+  } else if (sky === 'storm') {
+    for (let i = 0; i < 5; i++) drawCloud(rng() * W, HORIZON * (0.1 + rng() * 0.3), 60 + rng() * 50, rng, '#20202a');
+  } else if (sky === 'snow') {
+    for (let i = 0; i < 90; i++) {
+      const x = rng() * W, y = rng() * HORIZON;
+      ctx.fillStyle = `rgba(255,255,255,${0.5 + rng() * 0.5})`;
+      ctx.beginPath(); ctx.arc(x, y, 1 + rng() * 2, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  if (features_birds > 0) {
+    for (let i = 0; i < Math.min(features_birds * 2, 6); i++) {
+      drawBird(rng() * W, HORIZON * (0.2 + rng() * 0.3), rng);
+    }
+  }
+}
+let features_birds = 0;
+
+function drawGlow(x, y, r, hex) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r * 2.4);
+  g.addColorStop(0, hex);
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r * 2.4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = hex;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawCloud(x, y, size, rng, color = '#ffffff') {
+  ctx.fillStyle = color === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(30,30,38,0.75)';
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.arc(x + i * size * 0.4, y + Math.sin(i) * size * 0.15, size * (0.35 + rng() * 0.2), 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawBird(x, y, rng) {
+  const s = 6 + rng() * 4;
+  ctx.strokeStyle = 'rgba(20,20,20,0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x - s, y);
+  ctx.quadraticCurveTo(x - s * 0.3, y - s * 0.7, x, y);
+  ctx.quadraticCurveTo(x + s * 0.3, y - s * 0.7, x + s, y);
+  ctx.stroke();
+}
+
+function terrainY(x, amp, freq1, freq2, phase, base) {
+  return base + amp * (Math.sin(x * freq1 + phase) * 0.6 + Math.sin(x * freq2 + phase * 1.7) * 0.4);
+}
+
+function drawTerrainLayer(rng, baseY, amp, colorRgb, jagged) {
+  const freq1 = 0.004 + rng() * 0.004;
+  const freq2 = 0.01 + rng() * 0.006;
+  const phase = rng() * 100;
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(0, terrainY(0, amp, freq1, freq2, phase, baseY));
+  const step = jagged ? 14 : 6;
+  for (let x = 0; x <= W; x += step) {
+    ctx.lineTo(x, terrainY(x, amp, freq1, freq2, phase, baseY));
+  }
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fillStyle = rgbToCss(colorRgb);
+  ctx.fill();
+  return (x) => terrainY(x, amp, freq1, freq2, phase, baseY);
+}
+
+function drawTree(x, y, scale, rng, colorRgb) {
+  const h = 24 * scale, w = 14 * scale;
+  ctx.fillStyle = rgbToCss([colorRgb[0] * 0.7, colorRgb[1] * 0.7, colorRgb[2] * 0.6]);
+  ctx.fillRect(x - 1.5 * scale, y - h * 0.25, 3 * scale, h * 0.3);
+  ctx.fillStyle = rgbToCss(colorRgb);
+  for (let i = 0; i < 3; i++) {
+    const ty = y - h * 0.25 - i * h * 0.28;
+    const tw = w * (1 - i * 0.22);
+    ctx.beginPath();
+    ctx.moveTo(x, ty - h * 0.4);
+    ctx.lineTo(x - tw / 2, ty);
+    ctx.lineTo(x + tw / 2, ty);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawStructure(x, y, scale, colorRgb) {
+  const w = 30 * scale, h = 22 * scale;
+  ctx.fillStyle = rgbToCss(colorRgb);
+  ctx.fillRect(x - w / 2, y - h, w, h);
+  ctx.beginPath();
+  ctx.moveTo(x - w / 2 - 4, y - h);
+  ctx.lineTo(x, y - h - 16 * scale);
+  ctx.lineTo(x + w / 2 + 4, y - h);
+  ctx.closePath();
+  ctx.fillStyle = rgbToCss([colorRgb[0] * 0.75, colorRgb[1] * 0.6, colorRgb[2] * 0.55]);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,220,140,0.7)';
+  ctx.fillRect(x - 4, y - h * 0.55, 8, 8);
+}
+
+function drawSkyline(baseX, y, count, rng, colorRgb) {
+  for (let i = 0; i < count; i++) {
+    const h = 20 + rng() * 60;
+    const w = 16 + rng() * 14;
+    const x = baseX + i * (w + 4) - (count * (w + 4)) / 2;
+    ctx.fillStyle = rgbToCss([colorRgb[0], colorRgb[1], colorRgb[2]], 0.85 + i * 0.01);
+    ctx.fillRect(x, y - h, w, h);
+  }
+}
+
+function drawWater(rng, y, colorRgb) {
+  ctx.fillStyle = rgbToCss(colorRgb, 0.85);
+  ctx.fillRect(0, y, W, H - y);
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    const wy = y + 10 + i * 14 + rng() * 6;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 20) {
+      ctx.lineTo(x, wy + Math.sin(x * 0.05 + i) * 2);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawBoat(x, y, scale) {
+  ctx.fillStyle = '#3a2818';
+  ctx.beginPath();
+  ctx.moveTo(x - 14 * scale, y);
+  ctx.lineTo(x + 14 * scale, y);
+  ctx.lineTo(x + 9 * scale, y + 7 * scale);
+  ctx.lineTo(x - 9 * scale, y + 7 * scale);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#3a2818';
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x, y - 22 * scale);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(240,240,230,0.85)';
+  ctx.beginPath();
+  ctx.moveTo(x, y - 20 * scale);
+  ctx.lineTo(x + 14 * scale, y - 2 * scale);
+  ctx.lineTo(x, y - 2 * scale);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawFlower(x, y, hue) {
+  ctx.fillStyle = `hsl(${hue}, 70%, 65%)`;
+  for (let a = 0; a < 5; a++) {
+    const px = x + Math.cos(a * 1.256) * 4;
+    const py = y + Math.sin(a * 1.256) * 4;
+    ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = `hsl(${(hue + 40) % 360}, 80%, 60%)`;
+  ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawGlyph(x, y, word, rng) {
+  const h = xmur3(word)();
+  const height = 26 + (h % 40);
+  const width = 8 + (h % 10);
+  const hue = h % 360;
+  const lean = ((h % 20) - 10) * 0.02;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(lean);
+  const g = ctx.createLinearGradient(0, -height, 0, 0);
+  g.addColorStop(0, `hsl(${hue}, 35%, 55%)`);
+  g.addColorStop(1, `hsl(${hue}, 25%, 30%)`);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(-width / 2, 0);
+  ctx.lineTo(-width / 2 + 2, -height);
+  ctx.lineTo(width / 2 - 2, -height);
+  ctx.lineTo(width / 2, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function generateWorld(sentence) {
+  const seedFn = xmur3(sentence || 'a quiet still world');
+  const rng = mulberry32(seedFn());
+  const analysis = analyzeSentence(sentence);
+  features_birds = analysis.features.birds || 0;
+
+  ctx.clearRect(0, 0, W, H);
+  drawSky(rng, analysis.sky, analysis.colors);
+
+  const isSnow = analysis.sky === 'snow';
+  const isDesert = analysis.features.desert > 0;
+  const isNight = analysis.sky === 'night';
+
+  const baseGreen = isSnow ? [230, 236, 240] : isDesert ? [214, 178, 110] : [86, 122, 68];
+  const farColor = analysis.colors.length ? mixColors(analysis.colors, baseGreen, 0.2) : baseGreen.map(c => c * (isNight ? 0.5 : 0.85));
+  const midColor = analysis.colors.length ? mixColors(analysis.colors, baseGreen, 0.5) : baseGreen.map(c => c * (isNight ? 0.65 : 1));
+  const nearColor = analysis.colors.length ? mixColors(analysis.colors, baseGreen, 0.8) : baseGreen.map(c => c * (isNight ? 0.4 : 0.7));
+
+  const mountainAmp = analysis.features.mountains ? 90 + rng() * 40 : 20 + rng() * 15;
+  const farY = drawTerrainLayer(rng, HORIZON - 10, mountainAmp, farColor.map(c => c * 0.75), true);
+
+  if (analysis.features.mountains) {
+    const peakX = W * (0.25 + rng() * 0.5);
+    const peakY = farY(peakX) - 30;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.moveTo(peakX - 14, peakY + 22);
+    ctx.lineTo(peakX, peakY);
+    ctx.lineTo(peakX + 14, peakY + 22);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  const midY = drawTerrainLayer(rng, HORIZON + 30, 30 + rng() * 20, midColor, false);
+
+  if (analysis.features.structures) {
+    if (analysis.features.structures > 1) {
+      drawSkyline(W * (0.3 + rng() * 0.4), midY(W * 0.5) + 6, 4 + Math.min(analysis.features.structures, 5), rng, midColor.map(c => c * 0.7));
+    } else {
+      const sx = W * (0.3 + rng() * 0.4);
+      drawStructure(sx, midY(sx) + 4, 1 + rng() * 0.5, midColor.map(c => c * 0.65));
+    }
+  }
+
+  const treeCount = analysis.features.trees ? Math.min(3 + analysis.features.trees * 3, 14) : 0;
+  for (let i = 0; i < treeCount; i++) {
+    const tx = rng() * W;
+    drawTree(tx, midY(tx) + 6, 0.8 + rng() * 0.7, rng, midColor.map(c => c * 0.6));
+  }
+
+  let waterY = null;
+  if (analysis.features.water) {
+    waterY = H - 70 - rng() * 20;
+    const waterColor = isNight ? [20, 40, 70] : [50, 110, 160];
+    drawWater(rng, waterY, waterColor);
+    if (analysis.features.boats) drawBoat(W * (0.3 + rng() * 0.4), waterY + 20, 1 + rng() * 0.6);
+  }
+
+  const frontBase = waterY ? waterY : H - 40;
+  const nearY = drawTerrainLayer(rng, frontBase + 40, 22 + rng() * 14, nearColor, false);
+
+  if (analysis.features.flowers) {
+    const count = Math.min(analysis.features.flowers * 8, 40);
+    for (let i = 0; i < count; i++) {
+      const fx = rng() * W;
+      const fy = nearY(fx) + 4 + rng() * 10;
+      if (fy < H) drawFlower(fx, fy, rng() * 360);
+    }
+  }
+
+  const glyphCount = Math.min(analysis.glyphs.length, 5);
+  for (let i = 0; i < glyphCount; i++) {
+    const gx = W * ((i + 1) / (glyphCount + 1));
+    const gy = nearY(gx) + 2;
+    drawGlyph(gx, gy, analysis.glyphs[i], rng);
+  }
+
+  if (analysis.sky === 'rain' || analysis.sky === 'storm') {
+    ctx.strokeStyle = 'rgba(200,210,230,0.35)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 120; i++) {
+      const x = rng() * W, y = rng() * H;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 6, y + 16); ctx.stroke();
+    }
+  }
+  if (analysis.sky === 'fog') {
+    for (let i = 0; i < 4; i++) {
+      const y = HORIZON + i * 40;
+      const g = ctx.createLinearGradient(0, y - 20, 0, y + 20);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, y - 20, W, 40);
+    }
+  }
+}
+
+const LOG_KEY = 'terraform-log';
+function loadLog() {
+  try { return JSON.parse(sessionStorage.getItem(LOG_KEY) || '[]'); } catch { return []; }
+}
+function saveLog(log) {
+  sessionStorage.setItem(LOG_KEY, JSON.stringify(log.slice(0, 8)));
+}
+function renderLog() {
+  const log = loadLog();
+  const row = document.getElementById('logRow');
+  row.innerHTML = '';
+  for (const entry of log) {
+    const div = document.createElement('div');
+    div.className = 'log-item';
+    div.title = entry.sentence;
+    const img = document.createElement('img');
+    img.src = entry.thumb;
+    div.appendChild(img);
+    div.addEventListener('click', () => {
+      document.getElementById('sentence').value = entry.sentence;
+      run(entry.sentence, false);
+    });
+    row.appendChild(div);
+  }
+}
+function pushLog(sentence) {
+  const log = loadLog().filter(e => e.sentence !== sentence);
+  log.unshift({ sentence, thumb: canvas.toDataURL('image/png') });
+  saveLog(log);
+  renderLog();
+}
+
+function run(sentence, remember = true) {
+  generateWorld(sentence);
+  document.getElementById('caption').textContent = sentence ? `“${sentence}”` : '';
+  if (remember && sentence) pushLog(sentence);
+  const url = new URL(location.href);
+  url.hash = 's=' + encodeURIComponent(sentence);
+  history.replaceState(null, '', url);
+}
+
+document.getElementById('form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const sentence = document.getElementById('sentence').value.trim();
+  if (sentence) run(sentence);
+});
+
+document.getElementById('download').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'terraform.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('copyLink').addEventListener('click', async () => {
+  await navigator.clipboard.writeText(location.href);
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1400);
+});
+
+renderLog();
+const hashMatch = location.hash.match(/s=([^&]+)/);
+const initial = hashMatch ? decodeURIComponent(hashMatch[1]) : 'a quiet stone cottage under a starry winter sky';
+document.getElementById('sentence').value = initial;
+run(initial, false);
+</script>
+</body>
+</html>
