@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>the shelf — book lending</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --mustard: #D4B800;
+    --bg: #0D0D08;
+    --panel: #16160D;
+    --border: #232316;
+    --border-light: #333325;
+    --dim: #8a8a75;
+    --green: #2A9E6A;
+    --blue: #2A7CE8;
+    --orange: #E8762A;
+  }
+  body {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    background: var(--bg);
+    color: #FFFFFF;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 3rem 1.25rem 4rem;
+  }
+  .wrap { width: 100%; max-width: 880px; }
+  header { text-align: center; margin-bottom: 1.5rem; }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.5px; }
+  h1 span { color: var(--mustard); }
+  header p { margin-top: 0.5rem; font-size: 0.95rem; opacity: 0.55; }
+
+  .banner {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.82rem;
+    opacity: 0.7;
+    margin-bottom: 1.75rem;
+    line-height: 1.5;
+  }
+
+  .identity-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .identity-bar .who { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; }
+  select {
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.55rem 0.9rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-light);
+    background: var(--panel);
+    color: var(--mustard);
+    outline: none;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    border: none;
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    background: var(--mustard);
+    color: var(--bg);
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  button:hover { opacity: 0.85; }
+  button:active { transform: scale(0.97); }
+  button.ghost {
+    background: none;
+    border: 1.5px solid var(--border-light);
+    color: #fff;
+  }
+  button.ghost:hover { border-color: var(--mustard); opacity: 1; }
+  button.small { padding: 0.4rem 0.7rem; font-size: 0.72rem; border-radius: 9px; }
+  button.danger { background: none; border: 1.5px solid #5a2a24; color: #e88a80; }
+  button.danger:hover { border-color: #e85a4a; opacity: 1; }
+  button:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .panel {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .panel h2 { font-size: 1rem; margin-bottom: 0.9rem; }
+
+  .row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  input[type="text"] {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-light);
+    background: #0D0D08;
+    color: #fff;
+    outline: none;
+    flex: 1;
+    min-width: 140px;
+  }
+  input[type="text"]:focus { border-color: var(--mustard); }
+  input::placeholder { color: #55554a; }
+
+  .chip-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+  .chip {
+    display: flex; align-items: center; gap: 0.4rem;
+    background: #0D0D08; border: 1.5px solid var(--border-light);
+    border-radius: 100px; padding: 0.35rem 0.4rem 0.35rem 0.85rem;
+    font-size: 0.82rem;
+  }
+  .chip button { padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; background: transparent; border: none; color: #e88a80; }
+
+  .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .filter-btn {
+    background: none; border: 1.5px solid var(--border-light); color: var(--dim);
+    padding: 0.45rem 0.9rem; border-radius: 100px; font-size: 0.78rem; font-weight: 600;
+  }
+  .filter-btn.active { background: var(--mustard); color: var(--bg); border-color: var(--mustard); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.9rem; }
+  .card {
+    background: var(--panel); border: 1.5px solid var(--border); border-radius: 18px;
+    padding: 1.1rem; display: flex; flex-direction: column; gap: 0.55rem;
+  }
+  .card-top { display: flex; gap: 0.75rem; align-items: flex-start; }
+  .tile {
+    width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+  }
+  .card-title { font-weight: 700; font-size: 1rem; line-height: 1.25; }
+  .card-author { font-size: 0.8rem; opacity: 0.55; margin-top: 0.1rem; }
+  .card-owner { font-size: 0.75rem; opacity: 0.45; }
+
+  .badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px;
+    padding: 0.25rem 0.6rem; border-radius: 100px; width: fit-content;
+  }
+  .badge.available { background: rgba(42,158,106,0.18); color: var(--green); }
+  .badge.requested { background: rgba(232,118,42,0.18); color: var(--orange); }
+  .badge.borrowed { background: rgba(42,124,232,0.18); color: var(--blue); }
+
+  .card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
+
+  .empty { text-align: center; opacity: 0.5; padding: 3rem 1rem; font-size: 0.9rem; }
+  .section-title { font-size: 0.85rem; font-weight: 700; opacity: 0.6; margin: 1.75rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>the <span>shelf</span></h1>
+    <p>borrow &amp; lend books within your friend group</p>
+  </header>
+
+  <div class="banner">
+    📌 this is a local prototype — your library lives in <em>this browser only</em> and won't sync to your friends' phones or laptops yet. great for trying out the idea; ask if you want it upgraded to a real shared/synced version.
+  </div>
+
+  <div id="onboarding"></div>
+  <div id="app" style="display:none">
+    <div class="identity-bar">
+      <div class="who">
+        <span style="opacity:0.6">you are</span>
+        <select id="user-select" onchange="setCurrentUser(this.value)"></select>
+      </div>
+      <button class="ghost small" onclick="toggleFriendsPanel()">manage friends</button>
+    </div>
+
+    <div id="friends-panel" class="panel" style="display:none"></div>
+
+    <div class="panel">
+      <h2>add a book to the shelf</h2>
+      <form class="row" onsubmit="return handleAddBook(event)">
+        <input type="text" id="book-title" placeholder="title" required />
+        <input type="text" id="book-author" placeholder="author (optional)" />
+        <button type="submit">add</button>
+      </form>
+    </div>
+
+    <div class="filters" id="filters"></div>
+    <input type="text" id="search" placeholder="search title or author…" style="margin-bottom:1.25rem" oninput="renderBooks()" />
+
+    <div class="grid" id="book-grid"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'bif-book-lending-v1';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { friends: [], currentUser: null, books: [], onboarded: false };
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+let state = loadState();
+let activeFilter = 'all';
+
+const TILE_COLORS = [
+  { bg: '#3A2808', fg: '#E8C070' },
+  { bg: '#0A2825', fg: '#7AADAA' },
+  { bg: '#180A28', fg: '#C090E0' },
+  { bg: '#281800', fg: '#D4A030' },
+  { bg: '#0A1828', fg: '#5A9AE0' },
+  { bg: '#280A18', fg: '#E07AA0' },
+];
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function render() {
+  const showApp = state.onboarded && state.friends.length > 0;
+  document.getElementById('onboarding').style.display = showApp ? 'none' : '';
+  document.getElementById('app').style.display = showApp ? '' : 'none';
+  if (!showApp) { renderOnboarding(); return; }
+  if (!state.currentUser || !state.friends.includes(state.currentUser)) {
+    state.currentUser = state.friends[0];
+    saveState();
+  }
+  renderUserSelect();
+  renderFriendsPanel();
+  renderFilters();
+  renderBooks();
+}
+
+function renderOnboarding() {
+  document.getElementById('onboarding').innerHTML = `
+    <div class="panel">
+      <h2>who's in the friend group?</h2>
+      <p style="font-size:0.82rem;opacity:0.6;margin-bottom:0.9rem">add everyone who'll be lending &amp; borrowing books. you can add more later.</p>
+      <form class="row" onsubmit="return handleAddFriend(event, true)">
+        <input type="text" id="onboard-friend-name" placeholder="friend's name" required autofocus />
+        <button type="submit">add</button>
+      </form>
+      <div class="chip-list" id="onboard-chip-list"></div>
+      <button ${state.friends.length === 0 ? 'disabled' : ''} style="margin-top:1.1rem" onclick="finishOnboarding()">start using the shelf →</button>
+    </div>`;
+  const list = document.getElementById('onboard-chip-list');
+  list.innerHTML = state.friends.map(f => `
+    <div class="chip">${esc(f)} <button onclick="removeFriend('${esc(f)}')" title="remove">✕</button></div>
+  `).join('');
+}
+
+function finishOnboarding() {
+  if (state.friends.length === 0) return;
+  state.onboarded = true;
+  saveState();
+  render();
+}
+
+function handleAddFriend(evt, isOnboarding) {
+  evt.preventDefault();
+  const inputId = isOnboarding ? 'onboard-friend-name' : 'new-friend-name';
+  const input = document.getElementById(inputId);
+  const name = input.value.trim();
+  if (!name) return false;
+  if (state.friends.some(f => f.toLowerCase() === name.toLowerCase())) {
+    input.value = '';
+    return false;
+  }
+  state.friends.push(name);
+  if (!state.currentUser) state.currentUser = name;
+  saveState();
+  input.value = '';
+  render();
+  return false;
+}
+
+function removeFriend(name) {
+  const owns = state.books.some(b => b.owner === name || b.borrowedBy === name || b.requestedBy === name);
+  if (owns) {
+    alert(`can't remove ${name} — they own, are borrowing, or have requested a book on the shelf.`);
+    return;
+  }
+  state.friends = state.friends.filter(f => f !== name);
+  if (state.currentUser === name) state.currentUser = state.friends[0] || null;
+  saveState();
+  render();
+}
+
+function renderUserSelect() {
+  const sel = document.getElementById('user-select');
+  sel.innerHTML = state.friends.map(f => `<option value="${esc(f)}" ${f === state.currentUser ? 'selected' : ''}>${esc(f)}</option>`).join('');
+}
+function setCurrentUser(name) {
+  state.currentUser = name;
+  saveState();
+  render();
+}
+
+let friendsPanelOpen = false;
+function toggleFriendsPanel() {
+  friendsPanelOpen = !friendsPanelOpen;
+  renderFriendsPanel();
+}
+function renderFriendsPanel() {
+  const panel = document.getElementById('friends-panel');
+  panel.style.display = friendsPanelOpen ? '' : 'none';
+  if (!friendsPanelOpen) return;
+  panel.innerHTML = `
+    <h2>friend group</h2>
+    <form class="row" onsubmit="return handleAddFriend(event, false)">
+      <input type="text" id="new-friend-name" placeholder="friend's name" required />
+      <button type="submit">add</button>
+    </form>
+    <div class="chip-list">
+      ${state.friends.map(f => `<div class="chip">${esc(f)} <button onclick="removeFriend('${esc(f)}')" title="remove">✕</button></div>`).join('')}
+    </div>`;
+}
+
+function handleAddBook(evt) {
+  evt.preventDefault();
+  const title = document.getElementById('book-title').value.trim();
+  const author = document.getElementById('book-author').value.trim();
+  if (!title) return false;
+  state.books.unshift({
+    id: uid(),
+    title, author,
+    owner: state.currentUser,
+    status: 'available',
+    requestedBy: null,
+    borrowedBy: null,
+    addedAt: Date.now(),
+  });
+  saveState();
+  document.getElementById('book-title').value = '';
+  document.getElementById('book-author').value = '';
+  renderBooks();
+  return false;
+}
+
+function removeBook(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'available') return;
+  state.books = state.books.filter(b => b.id !== id);
+  saveState();
+  renderBooks();
+}
+
+function requestBorrow(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'available' || book.owner === state.currentUser) return;
+  book.status = 'requested';
+  book.requestedBy = state.currentUser;
+  saveState();
+  renderBooks();
+}
+function cancelRequest(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'requested' || book.requestedBy !== state.currentUser) return;
+  book.status = 'available';
+  book.requestedBy = null;
+  saveState();
+  renderBooks();
+}
+function approveRequest(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'requested' || book.owner !== state.currentUser) return;
+  book.status = 'borrowed';
+  book.borrowedBy = book.requestedBy;
+  book.requestedBy = null;
+  saveState();
+  renderBooks();
+}
+function declineRequest(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'requested' || book.owner !== state.currentUser) return;
+  book.status = 'available';
+  book.requestedBy = null;
+  saveState();
+  renderBooks();
+}
+function returnBook(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'borrowed') return;
+  if (book.owner !== state.currentUser && book.borrowedBy !== state.currentUser) return;
+  book.status = 'available';
+  book.borrowedBy = null;
+  saveState();
+  renderBooks();
+}
+
+const FILTERS = [
+  { key: 'all', label: 'all books' },
+  { key: 'available', label: 'available' },
+  { key: 'mine', label: 'my books' },
+  { key: 'borrowed-by-me', label: 'i have borrowed' },
+  { key: 'pending-approval', label: 'awaiting my ok' },
+];
+function renderFilters() {
+  document.getElementById('filters').innerHTML = FILTERS.map(f => `
+    <button class="filter-btn ${activeFilter === f.key ? 'active' : ''}" onclick="setFilter('${f.key}')">${f.label}</button>
+  `).join('');
+}
+function setFilter(key) { activeFilter = key; renderFilters(); renderBooks(); }
+
+function matchesFilter(b) {
+  const me = state.currentUser;
+  switch (activeFilter) {
+    case 'available': return b.status === 'available';
+    case 'mine': return b.owner === me;
+    case 'borrowed-by-me': return b.borrowedBy === me;
+    case 'pending-approval': return b.owner === me && b.status === 'requested';
+    default: return true;
+  }
+}
+
+function renderBooks() {
+  const query = (document.getElementById('search')?.value || '').trim().toLowerCase();
+  const books = state.books
+    .filter(matchesFilter)
+    .filter(b => !query || b.title.toLowerCase().includes(query) || (b.author || '').toLowerCase().includes(query));
+
+  const grid = document.getElementById('book-grid');
+  if (books.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">no books here yet.</div>`;
+    return;
+  }
+  grid.innerHTML = books.map(renderCard).join('');
+}
+
+function renderCard(b) {
+  const me = state.currentUser;
+  const color = TILE_COLORS[hashStr(b.title + (b.author || '')) % TILE_COLORS.length];
+
+  let badge = '';
+  if (b.status === 'available') badge = `<span class="badge available">available</span>`;
+  else if (b.status === 'requested') badge = `<span class="badge requested">requested by ${esc(b.requestedBy)}</span>`;
+  else if (b.status === 'borrowed') badge = `<span class="badge borrowed">with ${esc(b.borrowedBy)}</span>`;
+
+  let actions = '';
+  const isOwner = b.owner === me;
+  if (b.status === 'available') {
+    if (isOwner) actions = `<button class="small danger" onclick="removeBook('${b.id}')">remove</button>`;
+    else actions = `<button class="small" onclick="requestBorrow('${b.id}')">request to borrow</button>`;
+  } else if (b.status === 'requested') {
+    if (isOwner) {
+      actions = `<button class="small" onclick="approveRequest('${b.id}')">approve</button>
+                 <button class="small ghost" onclick="declineRequest('${b.id}')">decline</button>`;
+    } else if (b.requestedBy === me) {
+      actions = `<button class="small ghost" onclick="cancelRequest('${b.id}')">cancel request</button>`;
+    }
+  } else if (b.status === 'borrowed') {
+    if (isOwner || b.borrowedBy === me) {
+      actions = `<button class="small" onclick="returnBook('${b.id}')">mark returned</button>`;
+    }
+  }
+
+  return `
+    <div class="card">
+      <div class="card-top">
+        <div class="tile" style="background:${color.bg};color:${color.fg}">📖</div>
+        <div>
+          <div class="card-title">${esc(b.title)}</div>
+          ${b.author ? `<div class="card-author">${esc(b.author)}</div>` : ''}
+          <div class="card-owner">owned by ${esc(b.owner)}${isOwner ? ' (you)' : ''}</div>
+        </div>
+      </div>
+      ${badge}
+      <div class="card-actions">${actions}</div>
+    </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
