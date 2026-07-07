@@ -201,7 +201,7 @@
   </header>
 
   <div class="banner">
-    📌 this is a local prototype — your library lives in <em>this browser only</em> and won't sync to your friends' phones or laptops yet. book lookups use the free <a href="https://openlibrary.org" style="color:inherit" target="_blank" rel="noopener">Open Library</a> database, so they need an internet connection.
+    📌 this is a local prototype — your library lives in <em>this browser only</em> and won't sync to your friends' phones or laptops yet. book lookups check <a href="https://books.google.com" style="color:inherit" target="_blank" rel="noopener">Google Books</a> first, then <a href="https://openlibrary.org" style="color:inherit" target="_blank" rel="noopener">Open Library</a>, so they need an internet connection.
   </div>
 
   <div id="onboarding"></div>
@@ -234,6 +234,7 @@
 const STORAGE_KEY = 'bif-book-lending-v2';
 const OL_SEARCH = 'https://openlibrary.org/search.json';
 const OL_COVERS = 'https://covers.openlibrary.org/b';
+const GB_SEARCH = 'https://www.googleapis.com/books/v1/volumes';
 
 function loadState() {
   try {
@@ -424,9 +425,7 @@ async function startManualLookup(evt) {
   draft = { title, author, isbn: '', description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: null, selectedCover: 'fetched', loading: true, error: '' };
   renderAddBody();
   try {
-    const params = new URLSearchParams({ title, limit: '1' });
-    if (author) params.set('author', author);
-    const found = await lookupOpenLibrary(`${OL_SEARCH}?${params}`);
+    const found = await lookupBook({ title, author });
     applyLookupResult(found, { title, author });
   } catch (e) {
     draft.loading = false;
@@ -449,7 +448,7 @@ async function lookupByIsbnValue(raw) {
   draft = { title: '', author: '', isbn, description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: draft?.photoDataUrl || null, selectedCover: 'fetched', loading: true, error: '' };
   renderAddBody();
   try {
-    const found = await lookupOpenLibrary(`${OL_SEARCH}?isbn=${encodeURIComponent(isbn)}&limit=1`);
+    const found = await lookupBook({ isbn });
     applyLookupResult(found, { title: '', author: '', isbn });
   } catch (e) {
     draft.loading = false;
@@ -461,6 +460,43 @@ async function lookupByIsbnValue(raw) {
 function skipToManualDraft() {
   draft = { title: '', author: '', isbn: '', description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: null, selectedCover: 'fetched', loading: false, error: '' };
   renderAddBody();
+}
+
+// Tries Google Books first (much broader coverage of non-English and
+// regional titles), then falls back to Open Library (sometimes has
+// richer subject tags for older/public-domain works).
+async function lookupBook({ isbn, title, author }) {
+  const gbQuery = isbn ? `isbn:${isbn}` : `intitle:${title}${author ? '+inauthor:' + author : ''}`;
+  try {
+    const found = await lookupGoogleBooks(gbQuery);
+    if (found) return found;
+  } catch (e) { /* fall through to Open Library */ }
+
+  const olUrl = isbn
+    ? `${OL_SEARCH}?isbn=${encodeURIComponent(isbn)}&limit=1`
+    : `${OL_SEARCH}?${new URLSearchParams({ title, ...(author ? { author } : {}), limit: '1' })}`;
+  return lookupOpenLibrary(olUrl);
+}
+
+async function lookupGoogleBooks(query) {
+  const res = await fetch(`${GB_SEARCH}?q=${encodeURIComponent(query)}&maxResults=1`);
+  if (!res.ok) throw new Error('google books search failed');
+  const data = await res.json();
+  const item = data.items && data.items[0];
+  if (!item) return null;
+  const v = item.volumeInfo || {};
+  const isbnEntry = (v.industryIdentifiers || []).find(id => id.type === 'ISBN_13')
+    || (v.industryIdentifiers || []).find(id => id.type === 'ISBN_10');
+  const rawCover = v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail);
+  return {
+    title: v.title || '',
+    author: (v.authors && v.authors[0]) || '',
+    isbn: isbnEntry ? isbnEntry.identifier : '',
+    pageCount: v.pageCount || null,
+    tags: (v.categories || []).slice(0, 6).map(c => c.toLowerCase()),
+    coverUrl: rawCover ? rawCover.replace(/^http:\/\//, 'https://') : null,
+    description: v.description || '',
+  };
 }
 
 async function lookupOpenLibrary(searchUrl) {
