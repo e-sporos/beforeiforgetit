@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>the shelf — book lending</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --mustard: #D4B800;
+    --bg: #0D0D08;
+    --panel: #16160D;
+    --border: #232316;
+    --border-light: #333325;
+    --dim: #8a8a75;
+    --green: #2A9E6A;
+    --blue: #2A7CE8;
+    --orange: #E8762A;
+  }
+  body {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    background: var(--bg);
+    color: #FFFFFF;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 3rem 1.25rem 4rem;
+  }
+  .wrap { width: 100%; max-width: 880px; }
+  header { text-align: center; margin-bottom: 1.5rem; }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.5px; }
+  h1 span { color: var(--mustard); }
+  header p { margin-top: 0.5rem; font-size: 0.95rem; opacity: 0.55; }
+
+  .banner {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.82rem;
+    opacity: 0.7;
+    margin-bottom: 1.75rem;
+    line-height: 1.5;
+  }
+
+  .identity-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .identity-bar .who { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; }
+  select {
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.55rem 0.9rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-light);
+    background: var(--panel);
+    color: var(--mustard);
+    outline: none;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    border: none;
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    background: var(--mustard);
+    color: var(--bg);
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  button:hover { opacity: 0.85; }
+  button:active { transform: scale(0.97); }
+  button.ghost {
+    background: none;
+    border: 1.5px solid var(--border-light);
+    color: #fff;
+  }
+  button.ghost:hover { border-color: var(--mustard); opacity: 1; }
+  button.link {
+    background: none; border: none; color: var(--dim); text-decoration: underline;
+    padding: 0.4rem 0.2rem; font-weight: 600;
+  }
+  button.link:hover { color: #fff; opacity: 1; }
+  button.small { padding: 0.4rem 0.7rem; font-size: 0.72rem; border-radius: 9px; }
+  button.danger { background: none; border: 1.5px solid #5a2a24; color: #e88a80; }
+  button.danger:hover { border-color: #e85a4a; opacity: 1; }
+  button:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .panel {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .panel h2 { font-size: 1rem; margin-bottom: 0.9rem; }
+
+  .row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+  input[type="text"], input[type="number"], textarea {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-light);
+    background: #0D0D08;
+    color: #fff;
+    outline: none;
+    flex: 1;
+    min-width: 140px;
+  }
+  textarea { width: 100%; resize: vertical; min-height: 4.5rem; font-family: inherit; line-height: 1.5; }
+  input[type="text"]:focus, input[type="number"]:focus, textarea:focus { border-color: var(--mustard); }
+  input::placeholder, textarea::placeholder { color: #55554a; }
+  input[type="file"] { font-size: 0.82rem; color: var(--dim); }
+  label.field-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; display: block; margin-bottom: 0.4rem; }
+
+  .add-tabs { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
+  .add-tab {
+    background: none; border: 1.5px solid var(--border-light); color: var(--dim);
+    padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.78rem;
+  }
+  .add-tab.active { background: var(--mustard); color: var(--bg); border-color: var(--mustard); }
+
+  .chip-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+  .chip {
+    display: flex; align-items: center; gap: 0.4rem;
+    background: #0D0D08; border: 1.5px solid var(--border-light);
+    border-radius: 100px; padding: 0.35rem 0.4rem 0.35rem 0.85rem;
+    font-size: 0.82rem;
+  }
+  .chip button { padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; background: transparent; border: none; color: #e88a80; }
+  .tag-chip {
+    background: rgba(212,184,0,0.12); border: 1px solid rgba(212,184,0,0.3); color: var(--mustard);
+    border-radius: 100px; padding: 0.2rem 0.65rem; font-size: 0.68rem; font-weight: 600;
+  }
+
+  .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .filter-btn {
+    background: none; border: 1.5px solid var(--border-light); color: var(--dim);
+    padding: 0.45rem 0.9rem; border-radius: 100px; font-size: 0.78rem; font-weight: 600;
+  }
+  .filter-btn.active { background: var(--mustard); color: var(--bg); border-color: var(--mustard); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.9rem; }
+  .card {
+    background: var(--panel); border: 1.5px solid var(--border); border-radius: 18px;
+    padding: 1.1rem; display: flex; flex-direction: column; gap: 0.55rem;
+  }
+  .card-top { display: flex; gap: 0.75rem; align-items: flex-start; }
+  .tile {
+    width: 52px; height: 52px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    object-fit: cover; background-size: cover; background-position: center;
+  }
+  .card-title { font-weight: 700; font-size: 1rem; line-height: 1.25; }
+  .card-author { font-size: 0.8rem; opacity: 0.55; margin-top: 0.1rem; }
+  .card-owner { font-size: 0.75rem; opacity: 0.45; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .card-desc { font-size: 0.8rem; opacity: 0.7; line-height: 1.5; }
+  .card-meta { font-size: 0.72rem; opacity: 0.45; }
+
+  .badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px;
+    padding: 0.25rem 0.6rem; border-radius: 100px; width: fit-content;
+  }
+  .badge.available { background: rgba(42,158,106,0.18); color: var(--green); }
+  .badge.requested { background: rgba(232,118,42,0.18); color: var(--orange); }
+  .badge.borrowed { background: rgba(42,124,232,0.18); color: var(--blue); }
+
+  .card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
+
+  .empty { text-align: center; opacity: 0.5; padding: 3rem 1rem; font-size: 0.9rem; }
+
+  .review-cover-options { display: flex; gap: 0.75rem; }
+  .review-cover-choice {
+    width: 84px; height: 116px; border-radius: 10px; border: 2px solid var(--border-light);
+    cursor: pointer; overflow: hidden; position: relative; flex-shrink: 0;
+    background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+  }
+  .review-cover-choice.selected { border-color: var(--mustard); }
+  .status-note { font-size: 0.8rem; padding: 0.6rem 0; opacity: 0.7; }
+  .status-note.error { color: #e88a80; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>the <span>shelf</span></h1>
+    <p>borrow &amp; lend books within your friend group</p>
+  </header>
+
+  <div class="banner">
+    📌 this is a local prototype — your library lives in <em>this browser only</em> and won't sync to your friends' phones or laptops yet. book lookups check <a href="https://books.google.com" style="color:inherit" target="_blank" rel="noopener">Google Books</a> first, then <a href="https://openlibrary.org" style="color:inherit" target="_blank" rel="noopener">Open Library</a>, so they need an internet connection.
+  </div>
+
+  <div id="onboarding"></div>
+  <div id="app" style="display:none">
+    <div class="identity-bar">
+      <div class="who">
+        <span style="opacity:0.6">you are</span>
+        <select id="user-select" onchange="setCurrentUser(this.value)"></select>
+      </div>
+      <button class="ghost small" onclick="toggleFriendsPanel()">manage friends</button>
+    </div>
+
+    <div id="friends-panel" class="panel" style="display:none"></div>
+
+    <div class="panel">
+      <h2>add a book to the shelf</h2>
+      <div class="add-tabs" id="add-tabs"></div>
+      <div id="add-body"></div>
+    </div>
+
+    <div class="filters" id="filters"></div>
+    <div class="filters" id="tag-filters"></div>
+    <input type="text" id="search" placeholder="search title, author, or tag…" style="margin-bottom:1.25rem" oninput="renderBooks()" />
+
+    <div class="grid" id="book-grid"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'bif-book-lending-v2';
+const OL_SEARCH = 'https://openlibrary.org/search.json';
+const OL_COVERS = 'https://covers.openlibrary.org/b';
+const GB_SEARCH = 'https://www.googleapis.com/books/v1/volumes';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { friends: [], currentUser: null, books: [], onboarded: false };
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+let state = loadState();
+let activeFilter = 'all';
+let activeTag = null;
+let addMode = 'manual';
+let draft = null; // { title, author, isbn, description, pageCount, tags, coverUrl, photoDataUrl, selectedCover, loading, error }
+
+const TILE_COLORS = [
+  { bg: '#3A2808', fg: '#E8C070' },
+  { bg: '#0A2825', fg: '#7AADAA' },
+  { bg: '#180A28', fg: '#C090E0' },
+  { bg: '#281800', fg: '#D4A030' },
+  { bg: '#0A1828', fg: '#5A9AE0' },
+  { bg: '#280A18', fg: '#E07AA0' },
+];
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function render() {
+  const showApp = state.onboarded && state.friends.length > 0;
+  document.getElementById('onboarding').style.display = showApp ? 'none' : '';
+  document.getElementById('app').style.display = showApp ? '' : 'none';
+  if (!showApp) { renderOnboarding(); return; }
+  if (!state.currentUser || !state.friends.includes(state.currentUser)) {
+    state.currentUser = state.friends[0];
+    saveState();
+  }
+  renderUserSelect();
+  renderFriendsPanel();
+  renderAddTabs();
+  renderAddBody();
+  renderFilters();
+  renderTagFilters();
+  renderBooks();
+}
+
+function renderOnboarding() {
+  document.getElementById('onboarding').innerHTML = `
+    <div class="panel">
+      <h2>who's in the friend group?</h2>
+      <p style="font-size:0.82rem;opacity:0.6;margin-bottom:0.9rem">add everyone who'll be lending &amp; borrowing books. you can add more later.</p>
+      <form class="row" onsubmit="return handleAddFriend(event, true)">
+        <input type="text" id="onboard-friend-name" placeholder="friend's name" required autofocus />
+        <button type="submit">add</button>
+      </form>
+      <div class="chip-list" id="onboard-chip-list"></div>
+      <button ${state.friends.length === 0 ? 'disabled' : ''} style="margin-top:1.1rem" onclick="finishOnboarding()">start using the shelf →</button>
+    </div>`;
+  const list = document.getElementById('onboard-chip-list');
+  list.innerHTML = state.friends.map(f => `
+    <div class="chip">${esc(f)} <button onclick="removeFriend('${esc(f)}')" title="remove">✕</button></div>
+  `).join('');
+}
+
+function finishOnboarding() {
+  if (state.friends.length === 0) return;
+  state.onboarded = true;
+  saveState();
+  render();
+}
+
+function handleAddFriend(evt, isOnboarding) {
+  evt.preventDefault();
+  const inputId = isOnboarding ? 'onboard-friend-name' : 'new-friend-name';
+  const input = document.getElementById(inputId);
+  const name = input.value.trim();
+  if (!name) return false;
+  if (state.friends.some(f => f.toLowerCase() === name.toLowerCase())) {
+    input.value = '';
+    return false;
+  }
+  state.friends.push(name);
+  if (!state.currentUser) state.currentUser = name;
+  saveState();
+  input.value = '';
+  render();
+  return false;
+}
+
+function removeFriend(name) {
+  const owns = state.books.some(b => b.owner === name || b.borrowedBy === name || b.requestedBy === name);
+  if (owns) {
+    alert(`can't remove ${name} — they own, are borrowing, or have requested a book on the shelf.`);
+    return;
+  }
+  state.friends = state.friends.filter(f => f !== name);
+  if (state.currentUser === name) state.currentUser = state.friends[0] || null;
+  saveState();
+  render();
+}
+
+function renderUserSelect() {
+  const sel = document.getElementById('user-select');
+  sel.innerHTML = state.friends.map(f => `<option value="${esc(f)}" ${f === state.currentUser ? 'selected' : ''}>${esc(f)}</option>`).join('');
+}
+function setCurrentUser(name) {
+  state.currentUser = name;
+  saveState();
+  render();
+}
+
+let friendsPanelOpen = false;
+function toggleFriendsPanel() {
+  friendsPanelOpen = !friendsPanelOpen;
+  renderFriendsPanel();
+}
+function renderFriendsPanel() {
+  const panel = document.getElementById('friends-panel');
+  panel.style.display = friendsPanelOpen ? '' : 'none';
+  if (!friendsPanelOpen) return;
+  panel.innerHTML = `
+    <h2>friend group</h2>
+    <form class="row" onsubmit="return handleAddFriend(event, false)">
+      <input type="text" id="new-friend-name" placeholder="friend's name" required />
+      <button type="submit">add</button>
+    </form>
+    <div class="chip-list">
+      ${state.friends.map(f => `<div class="chip">${esc(f)} <button onclick="removeFriend('${esc(f)}')" title="remove">✕</button></div>`).join('')}
+    </div>`;
+}
+
+// ── ADD-BOOK FLOW ──────────────────────────────────────────────────────────
+
+const ADD_TABS = [
+  { key: 'manual', label: 'title & author' },
+  { key: 'isbn', label: 'isbn' },
+  { key: 'photo', label: 'photo of cover' },
+];
+
+function renderAddTabs() {
+  document.getElementById('add-tabs').innerHTML = ADD_TABS.map(t => `
+    <button class="add-tab ${addMode === t.key ? 'active' : ''}" onclick="switchAddMode('${t.key}')">${t.label}</button>
+  `).join('');
+}
+
+function switchAddMode(mode) {
+  addMode = mode;
+  draft = null;
+  renderAddTabs();
+  renderAddBody();
+}
+
+function renderAddBody() {
+  const el = document.getElementById('add-body');
+  if (draft) { el.innerHTML = renderDraftReview(); return; }
+
+  if (addMode === 'manual') {
+    el.innerHTML = `
+      <form class="row" onsubmit="return startManualLookup(event)">
+        <input type="text" id="manual-title" placeholder="title" required />
+        <input type="text" id="manual-author" placeholder="author (optional)" />
+        <button type="submit">find book</button>
+      </form>
+      <button class="link" onclick="skipToManualDraft()">skip lookup, enter details myself</button>`;
+  } else if (addMode === 'isbn') {
+    el.innerHTML = `
+      <form class="row" onsubmit="return startIsbnLookup(event)">
+        <input type="text" id="isbn-input" placeholder="ISBN (e.g. 9780441172719)" required />
+        <button type="submit">find book</button>
+      </form>`;
+  } else if (addMode === 'photo') {
+    el.innerHTML = `
+      <p style="font-size:0.8rem;opacity:0.6;margin-bottom:0.8rem">take or upload a photo showing the barcode (usually on the back cover) — we'll scan it to find the book.</p>
+      <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhotoSelected(event)" />
+      <div id="photo-status"></div>`;
+  }
+}
+
+async function startManualLookup(evt) {
+  evt.preventDefault();
+  const title = document.getElementById('manual-title').value.trim();
+  const author = document.getElementById('manual-author').value.trim();
+  if (!title) return false;
+  draft = { title, author, isbn: '', description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: null, selectedCover: 'fetched', loading: true, error: '' };
+  renderAddBody();
+  try {
+    const found = await lookupBook({ title, author });
+    applyLookupResult(found, { title, author });
+  } catch (e) {
+    draft.loading = false;
+    draft.error = "couldn't reach the book database — fill in details below yourself.";
+  }
+  renderAddBody();
+  return false;
+}
+
+async function startIsbnLookup(evt) {
+  evt.preventDefault();
+  const raw = document.getElementById('isbn-input').value.trim();
+  await lookupByIsbnValue(raw);
+  return false;
+}
+
+async function lookupByIsbnValue(raw) {
+  const isbn = raw.replace(/[^0-9Xx]/g, '');
+  if (!isbn) return;
+  draft = { title: '', author: '', isbn, description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: draft?.photoDataUrl || null, selectedCover: 'fetched', loading: true, error: '' };
+  renderAddBody();
+  try {
+    const found = await lookupBook({ isbn });
+    applyLookupResult(found, { title: '', author: '', isbn });
+  } catch (e) {
+    draft.loading = false;
+    draft.error = "couldn't reach the book database — fill in details below yourself.";
+  }
+  renderAddBody();
+}
+
+function skipToManualDraft() {
+  draft = { title: '', author: '', isbn: '', description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: null, selectedCover: 'fetched', loading: false, error: '' };
+  renderAddBody();
+}
+
+// Tries Google Books first (much broader coverage of non-English and
+// regional titles), then falls back to Open Library (sometimes has
+// richer subject tags for older/public-domain works).
+async function lookupBook({ isbn, title, author }) {
+  const gbQuery = isbn ? `isbn:${isbn}` : `intitle:${title}${author ? '+inauthor:' + author : ''}`;
+  try {
+    const found = await lookupGoogleBooks(gbQuery);
+    if (found) return found;
+  } catch (e) { /* fall through to Open Library */ }
+
+  const olUrl = isbn
+    ? `${OL_SEARCH}?isbn=${encodeURIComponent(isbn)}&limit=1`
+    : `${OL_SEARCH}?${new URLSearchParams({ title, ...(author ? { author } : {}), limit: '1' })}`;
+  return lookupOpenLibrary(olUrl);
+}
+
+async function lookupGoogleBooks(query) {
+  const res = await fetch(`${GB_SEARCH}?q=${encodeURIComponent(query)}&maxResults=1`);
+  if (!res.ok) throw new Error('google books search failed');
+  const data = await res.json();
+  const item = data.items && data.items[0];
+  if (!item) return null;
+  const v = item.volumeInfo || {};
+  const isbnEntry = (v.industryIdentifiers || []).find(id => id.type === 'ISBN_13')
+    || (v.industryIdentifiers || []).find(id => id.type === 'ISBN_10');
+  const rawCover = v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail);
+  return {
+    title: v.title || '',
+    author: (v.authors && v.authors[0]) || '',
+    isbn: isbnEntry ? isbnEntry.identifier : '',
+    pageCount: v.pageCount || null,
+    tags: (v.categories || []).slice(0, 6).map(c => c.toLowerCase()),
+    coverUrl: rawCover ? rawCover.replace(/^http:\/\//, 'https://') : null,
+    description: v.description || '',
+  };
+}
+
+async function lookupOpenLibrary(searchUrl) {
+  const res = await fetch(searchUrl);
+  if (!res.ok) throw new Error('search failed');
+  const data = await res.json();
+  const doc = data.docs && data.docs[0];
+  if (!doc) return null;
+  const result = {
+    title: doc.title || '',
+    author: (doc.author_name && doc.author_name[0]) || '',
+    isbn: (doc.isbn && doc.isbn[0]) || '',
+    pageCount: doc.number_of_pages_median || null,
+    tags: (doc.subject || []).slice(0, 6).map(s => s.toLowerCase()),
+    coverUrl: doc.cover_i ? `${OL_COVERS}/id/${doc.cover_i}-L.jpg` : null,
+    description: '',
+  };
+  if (doc.key) {
+    try {
+      const workRes = await fetch(`https://openlibrary.org${doc.key}.json`);
+      if (workRes.ok) {
+        const work = await workRes.json();
+        if (work.description) {
+          result.description = typeof work.description === 'string' ? work.description : (work.description.value || '');
+        }
+      }
+    } catch (e) { /* description is a nice-to-have; ignore failures */ }
+  }
+  return result;
+}
+
+function applyLookupResult(found, fallback) {
+  draft.loading = false;
+  if (found) {
+    draft.title = found.title || fallback.title;
+    draft.author = found.author || fallback.author;
+    draft.isbn = found.isbn || fallback.isbn || '';
+    draft.description = found.description;
+    draft.pageCount = found.pageCount;
+    draft.tags = found.tags;
+    draft.coverUrl = found.coverUrl || (draft.isbn ? `${OL_COVERS}/isbn/${draft.isbn}-L.jpg` : null);
+  } else {
+    draft.title = fallback.title;
+    draft.author = fallback.author;
+    draft.isbn = fallback.isbn || '';
+    draft.error = 'no exact match found — check the details below and fill in anything missing.';
+  }
+}
+
+async function handlePhotoSelected(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const photoDataUrl = await fileToDataUrl(file);
+  const statusEl = document.getElementById('photo-status');
+  statusEl.innerHTML = `<p class="status-note">scanning barcode…</p>`;
+
+  const fallbackDraft = (error) => ({
+    title: '', author: '', isbn: '', description: '', pageCount: null, tags: [],
+    coverUrl: null, photoDataUrl, selectedCover: 'photo', loading: false, error,
+  });
+
+  if (!('BarcodeDetector' in window)) {
+    draft = fallbackDraft("this browser can't scan barcodes. try Chrome/Edge, or fill in the details below yourself — your photo will still be offered as the cover.");
+    renderAddBody();
+    return;
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+    const barcodes = await detector.detect(bitmap);
+    if (!barcodes.length) {
+      draft = fallbackDraft("couldn't find a barcode in that photo. try again with the back cover in frame, or fill in the details below yourself — your photo will still be offered as the cover.");
+      renderAddBody();
+      return;
+    }
+    await lookupByIsbnValue(barcodes[0].rawValue);
+    if (draft) { draft.photoDataUrl = photoDataUrl; draft.selectedCover = draft.coverUrl ? 'fetched' : 'photo'; renderAddBody(); }
+  } catch (e) {
+    draft = fallbackDraft('something went wrong scanning that photo. fill in the details below yourself — your photo will still be offered as the cover.');
+    renderAddBody();
+  }
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderDraftReview() {
+  if (draft.loading) return `<p class="status-note">looking up book…</p>`;
+
+  const covers = [];
+  if (draft.coverUrl) covers.push({ key: 'fetched', style: `background-image:url('${draft.coverUrl.replace(/'/g, "\\'")}')`, label: 'found cover' });
+  if (draft.photoDataUrl) covers.push({ key: 'photo', style: `background-image:url('${draft.photoDataUrl}')`, label: 'your photo' });
+
+  const coverPicker = covers.length ? `
+    <div class="review-cover-options">
+      ${covers.map(c => `<div class="review-cover-choice ${draft.selectedCover === c.key ? 'selected' : ''}" style="${c.style}" title="${c.label}" onclick="selectDraftCover('${c.key}')"></div>`).join('')}
+    </div>` : `<div class="review-cover-choice" style="background:#3A2808;color:#E8C070">📖</div>`;
+
+  return `
+    ${draft.error ? `<p class="status-note error">${esc(draft.error)}</p>` : ''}
+    <div class="row" style="align-items:flex-start;margin-bottom:0.9rem">
+      ${coverPicker}
+      <div style="flex:1;display:flex;flex-direction:column;gap:0.6rem;min-width:200px">
+        <input type="text" id="draft-title" placeholder="title" value="${esc(draft.title)}" />
+        <input type="text" id="draft-author" placeholder="author" value="${esc(draft.author)}" />
+        <div class="row">
+          <input type="number" id="draft-pages" placeholder="pages" min="0" value="${draft.pageCount ?? ''}" style="max-width:110px" />
+          <input type="text" id="draft-isbn" placeholder="ISBN" value="${esc(draft.isbn)}" style="max-width:180px" />
+        </div>
+      </div>
+    </div>
+    <label class="field-label">description</label>
+    <textarea id="draft-description" placeholder="what's it about?">${esc(draft.description)}</textarea>
+    <label class="field-label" style="margin-top:0.8rem">tags</label>
+    <div class="chip-list" id="draft-tags">
+      ${draft.tags.map((t, i) => `<div class="chip">${esc(t)} <button onclick="removeDraftTag(${i})">✕</button></div>`).join('')}
+    </div>
+    <form class="row" style="margin-top:0.6rem" onsubmit="return addDraftTag(event)">
+      <input type="text" id="new-tag" placeholder="add a tag" />
+      <button type="submit" class="small ghost">add tag</button>
+    </form>
+    <div class="row" style="margin-top:1.1rem">
+      <button onclick="confirmAddBook()">add to shelf</button>
+      <button class="ghost" onclick="cancelDraft()">cancel</button>
+    </div>`;
+}
+
+function selectDraftCover(key) { draft.selectedCover = key; renderAddBody(); }
+function removeDraftTag(i) { draft.tags.splice(i, 1); renderAddBody(); }
+function addDraftTag(evt) {
+  evt.preventDefault();
+  const input = document.getElementById('new-tag');
+  const tag = input.value.trim().toLowerCase();
+  if (tag && !draft.tags.includes(tag)) draft.tags.push(tag);
+  renderAddBody();
+  return false;
+}
+function cancelDraft() { draft = null; renderAddBody(); }
+
+function confirmAddBook() {
+  const title = document.getElementById('draft-title').value.trim();
+  if (!title) { alert('a title is required.'); return; }
+  const author = document.getElementById('draft-author').value.trim();
+  const pageCount = document.getElementById('draft-pages').value.trim();
+  const isbn = document.getElementById('draft-isbn').value.trim();
+  const description = document.getElementById('draft-description').value.trim();
+  const coverUrl = draft.selectedCover === 'photo' ? draft.photoDataUrl : (draft.coverUrl || draft.photoDataUrl || null);
+
+  state.books.unshift({
+    id: uid(),
+    title, author, isbn,
+    description,
+    pageCount: pageCount ? parseInt(pageCount, 10) : null,
+    tags: draft.tags,
+    coverUrl,
+    owner: state.currentUser,
+    status: 'available',
+    requestedBy: null,
+    borrowedBy: null,
+    addedAt: Date.now(),
+  });
+  saveState();
+  draft = null;
+  addMode = 'manual';
+  renderAddTabs();
+  renderAddBody();
+  renderTagFilters();
+  renderBooks();
+}
+
+function removeBook(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'available') return;
+  state.books = state.books.filter(b => b.id !== id);
+  saveState();
+  renderTagFilters();
+  renderBooks();
+}
+
+function requestBorrow(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'available' || book.owner === state.currentUser) return;
+  book.status = 'requested';
+  book.requestedBy = state.currentUser;
+  saveState();
+  renderBooks();
+}
+function cancelRequest(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'requested' || book.requestedBy !== state.currentUser) return;
+  book.status = 'available';
+  book.requestedBy = null;
+  saveState();
+  renderBooks();
+}
+function approveRequest(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'requested' || book.owner !== state.currentUser) return;
+  book.status = 'borrowed';
+  book.borrowedBy = book.requestedBy;
+  book.requestedBy = null;
+  saveState();
+  renderBooks();
+}
+function declineRequest(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'requested' || book.owner !== state.currentUser) return;
+  book.status = 'available';
+  book.requestedBy = null;
+  saveState();
+  renderBooks();
+}
+function returnBook(id) {
+  const book = state.books.find(b => b.id === id);
+  if (!book || book.status !== 'borrowed') return;
+  if (book.owner !== state.currentUser && book.borrowedBy !== state.currentUser) return;
+  book.status = 'available';
+  book.borrowedBy = null;
+  saveState();
+  renderBooks();
+}
+
+const FILTERS = [
+  { key: 'all', label: 'all books' },
+  { key: 'available', label: 'available' },
+  { key: 'mine', label: 'my books' },
+  { key: 'borrowed-by-me', label: 'i have borrowed' },
+  { key: 'pending-approval', label: 'awaiting my ok' },
+];
+function renderFilters() {
+  document.getElementById('filters').innerHTML = FILTERS.map(f => `
+    <button class="filter-btn ${activeFilter === f.key ? 'active' : ''}" onclick="setFilter('${f.key}')">${f.label}</button>
+  `).join('');
+}
+function setFilter(key) { activeFilter = key; renderFilters(); renderBooks(); }
+
+function renderTagFilters() {
+  const tags = Array.from(new Set(state.books.flatMap(b => b.tags || []))).sort();
+  const el = document.getElementById('tag-filters');
+  if (!tags.length) { el.innerHTML = ''; return; }
+  el.innerHTML = tags.map(t => `
+    <button class="filter-btn ${activeTag === t ? 'active' : ''}" onclick="setTagFilter('${esc(t)}')">#${esc(t)}</button>
+  `).join('');
+}
+function setTagFilter(tag) { activeTag = activeTag === tag ? null : tag; renderTagFilters(); renderBooks(); }
+
+function matchesFilter(b) {
+  const me = state.currentUser;
+  if (activeTag && !(b.tags || []).includes(activeTag)) return false;
+  switch (activeFilter) {
+    case 'available': return b.status === 'available';
+    case 'mine': return b.owner === me;
+    case 'borrowed-by-me': return b.borrowedBy === me;
+    case 'pending-approval': return b.owner === me && b.status === 'requested';
+    default: return true;
+  }
+}
+
+function renderBooks() {
+  const query = (document.getElementById('search')?.value || '').trim().toLowerCase();
+  const books = state.books
+    .filter(matchesFilter)
+    .filter(b => !query
+      || b.title.toLowerCase().includes(query)
+      || (b.author || '').toLowerCase().includes(query)
+      || (b.tags || []).some(t => t.includes(query)));
+
+  const grid = document.getElementById('book-grid');
+  if (books.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">no books here yet.</div>`;
+    return;
+  }
+  grid.innerHTML = books.map(renderCard).join('');
+}
+
+function renderCard(b) {
+  const me = state.currentUser;
+  const color = TILE_COLORS[hashStr(b.title + (b.author || '')) % TILE_COLORS.length];
+  const cover = b.coverUrl
+    ? `<img class="tile" src="${b.coverUrl}" alt="" onerror="this.style.display='none'" />`
+    : `<div class="tile" style="background:${color.bg};color:${color.fg}">📖</div>`;
+
+  let badge = '';
+  if (b.status === 'available') badge = `<span class="badge available">available</span>`;
+  else if (b.status === 'requested') badge = `<span class="badge requested">requested by ${esc(b.requestedBy)}</span>`;
+  else if (b.status === 'borrowed') badge = `<span class="badge borrowed">with ${esc(b.borrowedBy)}</span>`;
+
+  let actions = '';
+  const isOwner = b.owner === me;
+  if (b.status === 'available') {
+    if (isOwner) actions = `<button class="small danger" onclick="removeBook('${b.id}')">remove</button>`;
+    else actions = `<button class="small" onclick="requestBorrow('${b.id}')">request to borrow</button>`;
+  } else if (b.status === 'requested') {
+    if (isOwner) {
+      actions = `<button class="small" onclick="approveRequest('${b.id}')">approve</button>
+                 <button class="small ghost" onclick="declineRequest('${b.id}')">decline</button>`;
+    } else if (b.requestedBy === me) {
+      actions = `<button class="small ghost" onclick="cancelRequest('${b.id}')">cancel request</button>`;
+    }
+  } else if (b.status === 'borrowed') {
+    if (isOwner || b.borrowedBy === me) {
+      actions = `<button class="small" onclick="returnBook('${b.id}')">mark returned</button>`;
+    }
+  }
+
+  return `
+    <div class="card">
+      <div class="card-top">
+        ${cover}
+        <div>
+          <div class="card-title">${esc(b.title)}</div>
+          ${b.author ? `<div class="card-author">${esc(b.author)}</div>` : ''}
+          <div class="card-owner">owned by ${esc(b.owner)}${isOwner ? ' (you)' : ''}</div>
+        </div>
+      </div>
+      ${b.tags && b.tags.length ? `<div class="card-tags">${b.tags.map(t => `<span class="tag-chip">#${esc(t)}</span>`).join('')}</div>` : ''}
+      ${b.description ? `<div class="card-desc">${esc(b.description.slice(0, 180))}${b.description.length > 180 ? '…' : ''}</div>` : ''}
+      ${b.pageCount ? `<div class="card-meta">${b.pageCount} pages</div>` : ''}
+      ${badge}
+      <div class="card-actions">${actions}</div>
+    </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
