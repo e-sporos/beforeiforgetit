@@ -86,6 +86,11 @@
     color: #fff;
   }
   button.ghost:hover { border-color: var(--mustard); opacity: 1; }
+  button.link {
+    background: none; border: none; color: var(--dim); text-decoration: underline;
+    padding: 0.4rem 0.2rem; font-weight: 600;
+  }
+  button.link:hover { color: #fff; opacity: 1; }
   button.small { padding: 0.4rem 0.7rem; font-size: 0.72rem; border-radius: 9px; }
   button.danger { background: none; border: 1.5px solid #5a2a24; color: #e88a80; }
   button.danger:hover { border-color: #e85a4a; opacity: 1; }
@@ -100,8 +105,8 @@
   }
   .panel h2 { font-size: 1rem; margin-bottom: 0.9rem; }
 
-  .row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-  input[type="text"] {
+  .row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+  input[type="text"], input[type="number"], textarea {
     font-family: inherit;
     font-size: 0.9rem;
     padding: 0.75rem 1rem;
@@ -113,8 +118,18 @@
     flex: 1;
     min-width: 140px;
   }
-  input[type="text"]:focus { border-color: var(--mustard); }
-  input::placeholder { color: #55554a; }
+  textarea { width: 100%; resize: vertical; min-height: 4.5rem; font-family: inherit; line-height: 1.5; }
+  input[type="text"]:focus, input[type="number"]:focus, textarea:focus { border-color: var(--mustard); }
+  input::placeholder, textarea::placeholder { color: #55554a; }
+  input[type="file"] { font-size: 0.82rem; color: var(--dim); }
+  label.field-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; display: block; margin-bottom: 0.4rem; }
+
+  .add-tabs { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
+  .add-tab {
+    background: none; border: 1.5px solid var(--border-light); color: var(--dim);
+    padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.78rem;
+  }
+  .add-tab.active { background: var(--mustard); color: var(--bg); border-color: var(--mustard); }
 
   .chip-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
   .chip {
@@ -124,8 +139,12 @@
     font-size: 0.82rem;
   }
   .chip button { padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; background: transparent; border: none; color: #e88a80; }
+  .tag-chip {
+    background: rgba(212,184,0,0.12); border: 1px solid rgba(212,184,0,0.3); color: var(--mustard);
+    border-radius: 100px; padding: 0.2rem 0.65rem; font-size: 0.68rem; font-weight: 600;
+  }
 
-  .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
   .filter-btn {
     background: none; border: 1.5px solid var(--border-light); color: var(--dim);
     padding: 0.45rem 0.9rem; border-radius: 100px; font-size: 0.78rem; font-weight: 600;
@@ -139,12 +158,16 @@
   }
   .card-top { display: flex; gap: 0.75rem; align-items: flex-start; }
   .tile {
-    width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+    width: 52px; height: 52px; border-radius: 8px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    object-fit: cover; background-size: cover; background-position: center;
   }
   .card-title { font-weight: 700; font-size: 1rem; line-height: 1.25; }
   .card-author { font-size: 0.8rem; opacity: 0.55; margin-top: 0.1rem; }
   .card-owner { font-size: 0.75rem; opacity: 0.45; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .card-desc { font-size: 0.8rem; opacity: 0.7; line-height: 1.5; }
+  .card-meta { font-size: 0.72rem; opacity: 0.45; }
 
   .badge {
     display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px;
@@ -157,7 +180,17 @@
   .card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
 
   .empty { text-align: center; opacity: 0.5; padding: 3rem 1rem; font-size: 0.9rem; }
-  .section-title { font-size: 0.85rem; font-weight: 700; opacity: 0.6; margin: 1.75rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .review-cover-options { display: flex; gap: 0.75rem; }
+  .review-cover-choice {
+    width: 84px; height: 116px; border-radius: 10px; border: 2px solid var(--border-light);
+    cursor: pointer; overflow: hidden; position: relative; flex-shrink: 0;
+    background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+  }
+  .review-cover-choice.selected { border-color: var(--mustard); }
+  .status-note { font-size: 0.8rem; padding: 0.6rem 0; opacity: 0.7; }
+  .status-note.error { color: #e88a80; }
 </style>
 </head>
 <body>
@@ -168,7 +201,7 @@
   </header>
 
   <div class="banner">
-    📌 this is a local prototype — your library lives in <em>this browser only</em> and won't sync to your friends' phones or laptops yet. great for trying out the idea; ask if you want it upgraded to a real shared/synced version.
+    📌 this is a local prototype — your library lives in <em>this browser only</em> and won't sync to your friends' phones or laptops yet. book lookups use the free <a href="https://openlibrary.org" style="color:inherit" target="_blank" rel="noopener">Open Library</a> database, so they need an internet connection.
   </div>
 
   <div id="onboarding"></div>
@@ -185,22 +218,22 @@
 
     <div class="panel">
       <h2>add a book to the shelf</h2>
-      <form class="row" onsubmit="return handleAddBook(event)">
-        <input type="text" id="book-title" placeholder="title" required />
-        <input type="text" id="book-author" placeholder="author (optional)" />
-        <button type="submit">add</button>
-      </form>
+      <div class="add-tabs" id="add-tabs"></div>
+      <div id="add-body"></div>
     </div>
 
     <div class="filters" id="filters"></div>
-    <input type="text" id="search" placeholder="search title or author…" style="margin-bottom:1.25rem" oninput="renderBooks()" />
+    <div class="filters" id="tag-filters"></div>
+    <input type="text" id="search" placeholder="search title, author, or tag…" style="margin-bottom:1.25rem" oninput="renderBooks()" />
 
     <div class="grid" id="book-grid"></div>
   </div>
 </div>
 
 <script>
-const STORAGE_KEY = 'bif-book-lending-v1';
+const STORAGE_KEY = 'bif-book-lending-v2';
+const OL_SEARCH = 'https://openlibrary.org/search.json';
+const OL_COVERS = 'https://covers.openlibrary.org/b';
 
 function loadState() {
   try {
@@ -213,6 +246,9 @@ function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
 let state = loadState();
 let activeFilter = 'all';
+let activeTag = null;
+let addMode = 'manual';
+let draft = null; // { title, author, isbn, description, pageCount, tags, coverUrl, photoDataUrl, selectedCover, loading, error }
 
 const TILE_COLORS = [
   { bg: '#3A2808', fg: '#E8C070' },
@@ -241,7 +277,10 @@ function render() {
   }
   renderUserSelect();
   renderFriendsPanel();
+  renderAddTabs();
+  renderAddBody();
   renderFilters();
+  renderTagFilters();
   renderBooks();
 }
 
@@ -330,14 +369,259 @@ function renderFriendsPanel() {
     </div>`;
 }
 
-function handleAddBook(evt) {
+// ── ADD-BOOK FLOW ──────────────────────────────────────────────────────────
+
+const ADD_TABS = [
+  { key: 'manual', label: 'title & author' },
+  { key: 'isbn', label: 'isbn' },
+  { key: 'photo', label: 'photo of cover' },
+];
+
+function renderAddTabs() {
+  document.getElementById('add-tabs').innerHTML = ADD_TABS.map(t => `
+    <button class="add-tab ${addMode === t.key ? 'active' : ''}" onclick="switchAddMode('${t.key}')">${t.label}</button>
+  `).join('');
+}
+
+function switchAddMode(mode) {
+  addMode = mode;
+  draft = null;
+  renderAddTabs();
+  renderAddBody();
+}
+
+function renderAddBody() {
+  const el = document.getElementById('add-body');
+  if (draft) { el.innerHTML = renderDraftReview(); return; }
+
+  if (addMode === 'manual') {
+    el.innerHTML = `
+      <form class="row" onsubmit="return startManualLookup(event)">
+        <input type="text" id="manual-title" placeholder="title" required />
+        <input type="text" id="manual-author" placeholder="author (optional)" />
+        <button type="submit">find book</button>
+      </form>
+      <button class="link" onclick="skipToManualDraft()">skip lookup, enter details myself</button>`;
+  } else if (addMode === 'isbn') {
+    el.innerHTML = `
+      <form class="row" onsubmit="return startIsbnLookup(event)">
+        <input type="text" id="isbn-input" placeholder="ISBN (e.g. 9780441172719)" required />
+        <button type="submit">find book</button>
+      </form>`;
+  } else if (addMode === 'photo') {
+    el.innerHTML = `
+      <p style="font-size:0.8rem;opacity:0.6;margin-bottom:0.8rem">take or upload a photo showing the barcode (usually on the back cover) — we'll scan it to find the book.</p>
+      <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhotoSelected(event)" />
+      <div id="photo-status"></div>`;
+  }
+}
+
+async function startManualLookup(evt) {
   evt.preventDefault();
-  const title = document.getElementById('book-title').value.trim();
-  const author = document.getElementById('book-author').value.trim();
+  const title = document.getElementById('manual-title').value.trim();
+  const author = document.getElementById('manual-author').value.trim();
   if (!title) return false;
+  draft = { title, author, isbn: '', description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: null, selectedCover: 'fetched', loading: true, error: '' };
+  renderAddBody();
+  try {
+    const params = new URLSearchParams({ title, limit: '1' });
+    if (author) params.set('author', author);
+    const found = await lookupOpenLibrary(`${OL_SEARCH}?${params}`);
+    applyLookupResult(found, { title, author });
+  } catch (e) {
+    draft.loading = false;
+    draft.error = "couldn't reach the book database — fill in details below yourself.";
+  }
+  renderAddBody();
+  return false;
+}
+
+async function startIsbnLookup(evt) {
+  evt.preventDefault();
+  const raw = document.getElementById('isbn-input').value.trim();
+  await lookupByIsbnValue(raw);
+  return false;
+}
+
+async function lookupByIsbnValue(raw) {
+  const isbn = raw.replace(/[^0-9Xx]/g, '');
+  if (!isbn) return;
+  draft = { title: '', author: '', isbn, description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: draft?.photoDataUrl || null, selectedCover: 'fetched', loading: true, error: '' };
+  renderAddBody();
+  try {
+    const found = await lookupOpenLibrary(`${OL_SEARCH}?isbn=${encodeURIComponent(isbn)}&limit=1`);
+    applyLookupResult(found, { title: '', author: '', isbn });
+  } catch (e) {
+    draft.loading = false;
+    draft.error = "couldn't reach the book database — fill in details below yourself.";
+  }
+  renderAddBody();
+}
+
+function skipToManualDraft() {
+  draft = { title: '', author: '', isbn: '', description: '', pageCount: null, tags: [], coverUrl: null, photoDataUrl: null, selectedCover: 'fetched', loading: false, error: '' };
+  renderAddBody();
+}
+
+async function lookupOpenLibrary(searchUrl) {
+  const res = await fetch(searchUrl);
+  if (!res.ok) throw new Error('search failed');
+  const data = await res.json();
+  const doc = data.docs && data.docs[0];
+  if (!doc) return null;
+  const result = {
+    title: doc.title || '',
+    author: (doc.author_name && doc.author_name[0]) || '',
+    isbn: (doc.isbn && doc.isbn[0]) || '',
+    pageCount: doc.number_of_pages_median || null,
+    tags: (doc.subject || []).slice(0, 6).map(s => s.toLowerCase()),
+    coverUrl: doc.cover_i ? `${OL_COVERS}/id/${doc.cover_i}-L.jpg` : null,
+    description: '',
+  };
+  if (doc.key) {
+    try {
+      const workRes = await fetch(`https://openlibrary.org${doc.key}.json`);
+      if (workRes.ok) {
+        const work = await workRes.json();
+        if (work.description) {
+          result.description = typeof work.description === 'string' ? work.description : (work.description.value || '');
+        }
+      }
+    } catch (e) { /* description is a nice-to-have; ignore failures */ }
+  }
+  return result;
+}
+
+function applyLookupResult(found, fallback) {
+  draft.loading = false;
+  if (found) {
+    draft.title = found.title || fallback.title;
+    draft.author = found.author || fallback.author;
+    draft.isbn = found.isbn || fallback.isbn || '';
+    draft.description = found.description;
+    draft.pageCount = found.pageCount;
+    draft.tags = found.tags;
+    draft.coverUrl = found.coverUrl || (draft.isbn ? `${OL_COVERS}/isbn/${draft.isbn}-L.jpg` : null);
+  } else {
+    draft.title = fallback.title;
+    draft.author = fallback.author;
+    draft.isbn = fallback.isbn || '';
+    draft.error = 'no exact match found — check the details below and fill in anything missing.';
+  }
+}
+
+async function handlePhotoSelected(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const photoDataUrl = await fileToDataUrl(file);
+  const statusEl = document.getElementById('photo-status');
+  statusEl.innerHTML = `<p class="status-note">scanning barcode…</p>`;
+
+  const fallbackDraft = (error) => ({
+    title: '', author: '', isbn: '', description: '', pageCount: null, tags: [],
+    coverUrl: null, photoDataUrl, selectedCover: 'photo', loading: false, error,
+  });
+
+  if (!('BarcodeDetector' in window)) {
+    draft = fallbackDraft("this browser can't scan barcodes. try Chrome/Edge, or fill in the details below yourself — your photo will still be offered as the cover.");
+    renderAddBody();
+    return;
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+    const barcodes = await detector.detect(bitmap);
+    if (!barcodes.length) {
+      draft = fallbackDraft("couldn't find a barcode in that photo. try again with the back cover in frame, or fill in the details below yourself — your photo will still be offered as the cover.");
+      renderAddBody();
+      return;
+    }
+    await lookupByIsbnValue(barcodes[0].rawValue);
+    if (draft) { draft.photoDataUrl = photoDataUrl; draft.selectedCover = draft.coverUrl ? 'fetched' : 'photo'; renderAddBody(); }
+  } catch (e) {
+    draft = fallbackDraft('something went wrong scanning that photo. fill in the details below yourself — your photo will still be offered as the cover.');
+    renderAddBody();
+  }
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderDraftReview() {
+  if (draft.loading) return `<p class="status-note">looking up book…</p>`;
+
+  const covers = [];
+  if (draft.coverUrl) covers.push({ key: 'fetched', style: `background-image:url('${draft.coverUrl.replace(/'/g, "\\'")}')`, label: 'found cover' });
+  if (draft.photoDataUrl) covers.push({ key: 'photo', style: `background-image:url('${draft.photoDataUrl}')`, label: 'your photo' });
+
+  const coverPicker = covers.length ? `
+    <div class="review-cover-options">
+      ${covers.map(c => `<div class="review-cover-choice ${draft.selectedCover === c.key ? 'selected' : ''}" style="${c.style}" title="${c.label}" onclick="selectDraftCover('${c.key}')"></div>`).join('')}
+    </div>` : `<div class="review-cover-choice" style="background:#3A2808;color:#E8C070">📖</div>`;
+
+  return `
+    ${draft.error ? `<p class="status-note error">${esc(draft.error)}</p>` : ''}
+    <div class="row" style="align-items:flex-start;margin-bottom:0.9rem">
+      ${coverPicker}
+      <div style="flex:1;display:flex;flex-direction:column;gap:0.6rem;min-width:200px">
+        <input type="text" id="draft-title" placeholder="title" value="${esc(draft.title)}" />
+        <input type="text" id="draft-author" placeholder="author" value="${esc(draft.author)}" />
+        <div class="row">
+          <input type="number" id="draft-pages" placeholder="pages" min="0" value="${draft.pageCount ?? ''}" style="max-width:110px" />
+          <input type="text" id="draft-isbn" placeholder="ISBN" value="${esc(draft.isbn)}" style="max-width:180px" />
+        </div>
+      </div>
+    </div>
+    <label class="field-label">description</label>
+    <textarea id="draft-description" placeholder="what's it about?">${esc(draft.description)}</textarea>
+    <label class="field-label" style="margin-top:0.8rem">tags</label>
+    <div class="chip-list" id="draft-tags">
+      ${draft.tags.map((t, i) => `<div class="chip">${esc(t)} <button onclick="removeDraftTag(${i})">✕</button></div>`).join('')}
+    </div>
+    <form class="row" style="margin-top:0.6rem" onsubmit="return addDraftTag(event)">
+      <input type="text" id="new-tag" placeholder="add a tag" />
+      <button type="submit" class="small ghost">add tag</button>
+    </form>
+    <div class="row" style="margin-top:1.1rem">
+      <button onclick="confirmAddBook()">add to shelf</button>
+      <button class="ghost" onclick="cancelDraft()">cancel</button>
+    </div>`;
+}
+
+function selectDraftCover(key) { draft.selectedCover = key; renderAddBody(); }
+function removeDraftTag(i) { draft.tags.splice(i, 1); renderAddBody(); }
+function addDraftTag(evt) {
+  evt.preventDefault();
+  const input = document.getElementById('new-tag');
+  const tag = input.value.trim().toLowerCase();
+  if (tag && !draft.tags.includes(tag)) draft.tags.push(tag);
+  renderAddBody();
+  return false;
+}
+function cancelDraft() { draft = null; renderAddBody(); }
+
+function confirmAddBook() {
+  const title = document.getElementById('draft-title').value.trim();
+  if (!title) { alert('a title is required.'); return; }
+  const author = document.getElementById('draft-author').value.trim();
+  const pageCount = document.getElementById('draft-pages').value.trim();
+  const isbn = document.getElementById('draft-isbn').value.trim();
+  const description = document.getElementById('draft-description').value.trim();
+  const coverUrl = draft.selectedCover === 'photo' ? draft.photoDataUrl : (draft.coverUrl || draft.photoDataUrl || null);
+
   state.books.unshift({
     id: uid(),
-    title, author,
+    title, author, isbn,
+    description,
+    pageCount: pageCount ? parseInt(pageCount, 10) : null,
+    tags: draft.tags,
+    coverUrl,
     owner: state.currentUser,
     status: 'available',
     requestedBy: null,
@@ -345,10 +629,12 @@ function handleAddBook(evt) {
     addedAt: Date.now(),
   });
   saveState();
-  document.getElementById('book-title').value = '';
-  document.getElementById('book-author').value = '';
+  draft = null;
+  addMode = 'manual';
+  renderAddTabs();
+  renderAddBody();
+  renderTagFilters();
   renderBooks();
-  return false;
 }
 
 function removeBook(id) {
@@ -356,6 +642,7 @@ function removeBook(id) {
   if (!book || book.status !== 'available') return;
   state.books = state.books.filter(b => b.id !== id);
   saveState();
+  renderTagFilters();
   renderBooks();
 }
 
@@ -416,8 +703,19 @@ function renderFilters() {
 }
 function setFilter(key) { activeFilter = key; renderFilters(); renderBooks(); }
 
+function renderTagFilters() {
+  const tags = Array.from(new Set(state.books.flatMap(b => b.tags || []))).sort();
+  const el = document.getElementById('tag-filters');
+  if (!tags.length) { el.innerHTML = ''; return; }
+  el.innerHTML = tags.map(t => `
+    <button class="filter-btn ${activeTag === t ? 'active' : ''}" onclick="setTagFilter('${esc(t)}')">#${esc(t)}</button>
+  `).join('');
+}
+function setTagFilter(tag) { activeTag = activeTag === tag ? null : tag; renderTagFilters(); renderBooks(); }
+
 function matchesFilter(b) {
   const me = state.currentUser;
+  if (activeTag && !(b.tags || []).includes(activeTag)) return false;
   switch (activeFilter) {
     case 'available': return b.status === 'available';
     case 'mine': return b.owner === me;
@@ -431,7 +729,10 @@ function renderBooks() {
   const query = (document.getElementById('search')?.value || '').trim().toLowerCase();
   const books = state.books
     .filter(matchesFilter)
-    .filter(b => !query || b.title.toLowerCase().includes(query) || (b.author || '').toLowerCase().includes(query));
+    .filter(b => !query
+      || b.title.toLowerCase().includes(query)
+      || (b.author || '').toLowerCase().includes(query)
+      || (b.tags || []).some(t => t.includes(query)));
 
   const grid = document.getElementById('book-grid');
   if (books.length === 0) {
@@ -444,6 +745,9 @@ function renderBooks() {
 function renderCard(b) {
   const me = state.currentUser;
   const color = TILE_COLORS[hashStr(b.title + (b.author || '')) % TILE_COLORS.length];
+  const cover = b.coverUrl
+    ? `<img class="tile" src="${b.coverUrl}" alt="" onerror="this.style.display='none'" />`
+    : `<div class="tile" style="background:${color.bg};color:${color.fg}">📖</div>`;
 
   let badge = '';
   if (b.status === 'available') badge = `<span class="badge available">available</span>`;
@@ -471,13 +775,16 @@ function renderCard(b) {
   return `
     <div class="card">
       <div class="card-top">
-        <div class="tile" style="background:${color.bg};color:${color.fg}">📖</div>
+        ${cover}
         <div>
           <div class="card-title">${esc(b.title)}</div>
           ${b.author ? `<div class="card-author">${esc(b.author)}</div>` : ''}
           <div class="card-owner">owned by ${esc(b.owner)}${isOwner ? ' (you)' : ''}</div>
         </div>
       </div>
+      ${b.tags && b.tags.length ? `<div class="card-tags">${b.tags.map(t => `<span class="tag-chip">#${esc(t)}</span>`).join('')}</div>` : ''}
+      ${b.description ? `<div class="card-desc">${esc(b.description.slice(0, 180))}${b.description.length > 180 ? '…' : ''}</div>` : ''}
+      ${b.pageCount ? `<div class="card-meta">${b.pageCount} pages</div>` : ''}
       ${badge}
       <div class="card-actions">${actions}</div>
     </div>`;
