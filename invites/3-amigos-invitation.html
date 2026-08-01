@@ -46,12 +46,12 @@
   /* the wood sits behind the content */
   .wood{
     position:fixed;top:0;left:50%;transform:translateX(-50%);
-    width:100%;max-width:560px;height:100vh;z-index:-2;pointer-events:none;
+    width:100%;max-width:560px;height:100vh;height:100dvh;z-index:-2;pointer-events:none;
   }
   /* …and a thin slice of it in front, at the corners only */
   .wood-front{
     position:fixed;top:0;left:50%;transform:translateX(-50%);
-    width:100%;max-width:560px;height:100vh;z-index:4;pointer-events:none;
+    width:100%;max-width:560px;height:100vh;height:100dvh;z-index:4;pointer-events:none;
   }
   .wood svg,.wood-front svg{width:100%;height:100%;display:block}
 
@@ -65,8 +65,8 @@
 
   /* ---------- CHAPTERS ---------- */
   .chapters{position:relative;z-index:2;padding:0 20px}
-  .ch{min-height:88vh;display:flex;flex-direction:column;justify-content:center;padding:60px 0}
-  .chapters .ch:last-child{min-height:100vh}
+  .ch{min-height:88vh;min-height:88dvh;display:flex;flex-direction:column;justify-content:center;padding:60px 0}
+  .chapters .ch:last-child{min-height:100vh;min-height:100dvh}
   .ch.left{align-items:flex-start;text-align:left}
   .ch.right{align-items:flex-end;text-align:right}
   .ch.mid{align-items:center;text-align:center}
