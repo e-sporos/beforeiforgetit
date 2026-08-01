@@ -68,10 +68,17 @@
     font-family:'Baloo 2',sans-serif;font-weight:700;font-size:10.5px;
     letter-spacing:2.6px;text-transform:uppercase;padding:6px 14px;border-radius:20px;margin-bottom:16px}
   h1{display:inline-block;font-family:'Baloo 2',sans-serif;font-weight:800;
-    font-size:clamp(38px,11vw,58px);line-height:.98;
     background:rgba(247,237,217,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-    padding:10px 18px;border-radius:18px}
+    padding:14px 20px;border-radius:22px}
   h1 em{font-style:normal;color:var(--clay)}
+  .hero-row{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap}
+  .hero-num{font-family:'Baloo 2',sans-serif;font-weight:800;line-height:.8;
+    font-size:clamp(78px,21vw,128px);letter-spacing:-2px;position:relative;
+    -webkit-text-stroke:5px var(--ink);paint-order:stroke fill}
+  .hero-num.a{color:var(--green);margin-right:-24px;transform:translateY(-16px)}
+  .hero-num.b{color:var(--clay);margin-left:-24px;transform:translate(18px,26px)}
+  .hero-mid{font-family:'Baloo 2',sans-serif;font-weight:800;
+    font-size:clamp(21px,5.6vw,28px);line-height:1.14;padding:0 4px;position:relative;z-index:1}
   .lede{display:inline-block;margin-top:18px;font-size:15px;font-weight:600;opacity:.8;max-width:32ch;
     background:rgba(247,237,217,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
     padding:10px 16px;border-radius:14px}
@@ -186,7 +193,7 @@
 
     <section class="ch mid" data-sky="#F7EDD9">
       <div class="reveal"><span class="ribbon">Μια ιστορία από το δάσος</span></div>
-      <h1 class="reveal d1">3 μικροί<br><em>φίλοι</em><br>κλείνουν τα 3</h1>
+      <h1 class="reveal d1"><span class="hero-row"><span class="hero-num a">3</span><span class="hero-mid">μικροί<br><em>φίλοι</em><br>κλείνουν τα</span><span class="hero-num b">3</span></span></h1>
       <p class="lede reveal d2">Μια αλεπού, ένας σκίουρος κι ένας σκαντζόχοιρος γιορτάζουν μαζί τα γενέθλιά τους!</p>
       <div class="scrollcue reveal d3">ακολούθησε το μονοπάτι
         <svg width="13" height="17" viewBox="0 0 13 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1v14M1.5 10l5 5 5-5"/></svg>
