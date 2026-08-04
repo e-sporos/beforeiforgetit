@@ -182,11 +182,24 @@ obligations:
         months_after_period_end: 1
         day: 26
     reminders: [10, 5, 2, 1]
+    conditional: true
+    condition: >
+      you actually issued an invoice to a business customer in another EU
+      member state during this month
     notes: >
       Highly relevant if you invoice business clients in other EU member states
       — a common situation for a designer. Services to an EU business with a
       valid VAT number are generally reverse-charged (no Greek VAT on the
       invoice) but must still be reported here.
+
+      CONDITIONAL. Many freelancers have EU clients in some months and not
+      others. The obligation attaches to the months where intra-EU transactions
+      actually occurred, so this is generated as a monthly CHECK, never as an
+      assumed filing: an unrecorded VIES month is a question ("did you invoice
+      an EU business that month?"), not a missed deadline. Set the profile flag
+      `has_intra_eu_b2b` to true if this happens at all, even occasionally —
+      it is better to be asked twelve times a year than to discover a year of
+      unfiled statements.
     source: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/fpa
     verified_on: 2026-08-04
     review_by: 2027-01-31

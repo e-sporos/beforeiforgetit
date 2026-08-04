@@ -33,6 +33,9 @@ export interface ObligationInstance {
   reminders: number[];
   /** Set when this is one payment in a series, e.g. 3 of 8. */
   installment?: { sequence: number; of: number };
+  /** True when the obligation only applies if something happened in the period. */
+  conditional?: boolean;
+  condition?: string;
   often_extended?: boolean;
   penalty_if_late?: string;
   what_you_must_supply?: string;
@@ -245,6 +248,8 @@ export function resolveInstances(args: {
           days_until_due: daysBetween(today, due),
           reminders: def.reminders ?? [30, 14, 7, 3, 1],
           installment: occurrence.sequence ? { sequence: occurrence.sequence, of: occurrence.of! } : undefined,
+          conditional: def.conditional,
+          condition: def.condition,
           often_extended: def.often_extended,
           penalty_if_late: def.penalty_if_late,
           what_you_must_supply: def.what_you_must_supply,

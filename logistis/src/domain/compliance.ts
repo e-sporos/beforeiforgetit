@@ -61,6 +61,18 @@ export function classify(
   }
 
   if (daysUntil < 0) {
+    // A conditional obligation with no record is a question, not a failure.
+    // We do not know whether it applied, so we must not imply anyone dropped it.
+    if (instance.conditional) {
+      return {
+        ...base,
+        state: 'at_risk',
+        recommended_action:
+          `Applies only if: ${instance.condition ?? 'the triggering event occurred in this period'}. ` +
+          `Nobody has recorded whether it did. If it applied, check it was filed and record the reference. ` +
+          `If it did not, record it as not_applicable so it stops appearing.`,
+      };
+    }
     return {
       ...base,
       state: 'missed',

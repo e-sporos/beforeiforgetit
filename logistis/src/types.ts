@@ -73,6 +73,18 @@ export interface ObligationDef extends Provenance {
   what_you_must_supply?: string;
   action_required?: string;
   often_extended?: boolean;
+  /**
+   * True when the obligation only bites if something happened in the period.
+   *
+   * VIES is the motivating case: it is due only for months in which you
+   * actually invoiced an EU business customer. Treating such an obligation as
+   * unconditionally due produces a monthly false alarm, and a calendar that
+   * cries wolf gets ignored — so these are surfaced as a question, never as a
+   * missed filing.
+   */
+  conditional?: boolean;
+  /** Plain-language statement of what must be true for it to apply. */
+  condition?: string;
 }
 
 export interface Bracket {

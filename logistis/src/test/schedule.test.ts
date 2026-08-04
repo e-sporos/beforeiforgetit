@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { loadPack, resolveParameter } from '../rules/pack.js';
 import { appliesTo, resolveInstances } from '../rules/schedule.js';
 import { applyBrackets, parsePeriod } from '../domain/estimates.js';
+import { classify } from '../domain/compliance.js';
 import type { Bracket, Profile } from '../types.js';
 
 const soleTrader: Profile = {
@@ -133,6 +134,46 @@ test('the GEMI annual fee lands at the end of Q1', () => {
 
   assert.equal(fees.length, 1);
   assert.equal(fees[0]!.due_date, '2026-03-31');
+});
+
+test('an overdue conditional obligation is a question, never a missed filing', () => {
+  const { pack, holidays } = loadPack('gr');
+  const euProfile = { ...soleTrader, has_intra_eu_b2b: true };
+
+  const vies = resolveInstances({
+    obligations: pack.obligations,
+    profile: euProfile,
+    holidays,
+    from: '2026-06-01',
+    to: '2026-06-30',
+    today: '2026-08-04',
+    packId: 'gr',
+  }).find((i) => i.obligation_id === 'gr.vies.recapitulative')!;
+
+  assert.ok(vies, 'VIES resolves for a profile with EU clients');
+  assert.equal(vies.conditional, true, 'VIES must be marked conditional');
+  assert.ok(vies.condition, 'a conditional obligation must say what it depends on');
+  assert.ok(vies.days_until_due < 0, 'this instance is in the past');
+
+  // Overdue and unrecorded — but we do not know whether it ever applied, so it
+  // must not be reported as missed. That would be an accusation we cannot back.
+  const status = classify(vies, undefined, '2026-08-04');
+  assert.notEqual(status.state, 'missed');
+  assert.equal(status.state, 'at_risk');
+  assert.match(status.recommended_action ?? '', /Applies only if/);
+  assert.match(status.recommended_action ?? '', /not_applicable/);
+
+  // A non-conditional obligation in the same position IS missed.
+  const efka = resolveInstances({
+    obligations: pack.obligations,
+    profile: euProfile,
+    holidays,
+    from: '2026-06-01',
+    to: '2026-06-30',
+    today: '2026-08-04',
+    packId: 'gr',
+  }).find((i) => i.obligation_id === 'gr.efka.contributions')!;
+  assert.equal(classify(efka, undefined, '2026-08-04').state, 'missed');
 });
 
 test('watch sources are tiered, with official sources present', () => {
