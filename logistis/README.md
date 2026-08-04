@@ -32,13 +32,26 @@ you copy your real figure from your own notice instead.
 
 ## Install
 
+While this lives as a subdirectory of another repo, clone the branch it sits on:
+
+```bash
+git clone -b claude/accountant-agent-small-business-etzd4v \
+  https://github.com/e-sporos/beforeiforgetit.git
+cd beforeiforgetit/logistis
+npm install && npm run build && npm test
+```
+
+Once it has its own repo, that becomes the usual:
+
 ```bash
 git clone https://github.com/e-sporos/logistis.git
 cd logistis
-npm install
-npm run build
-npm test
+npm install && npm run build && npm test
 ```
+
+Nothing in the code depends on which of the two it is — it is self-contained
+either way, and `git subtree split --prefix=logistis` extracts it with its
+history intact whenever you want to move it.
 
 Register it with your MCP client. For Claude Code:
 
