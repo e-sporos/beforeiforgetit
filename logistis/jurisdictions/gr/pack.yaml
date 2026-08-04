@@ -1,0 +1,633 @@
+# =============================================================================
+# Logistis jurisdiction pack — Greece (GR)
+# =============================================================================
+#
+# WHAT THIS FILE IS
+#   A machine-readable description of the recurring statutory obligations a
+#   small Greek business has, plus the numeric parameters needed to estimate
+#   what it will owe.
+#
+# THE ONE RULE FOR EDITING THIS FILE
+#   Every fact carries provenance: `source`, `verified_on`, and `review_by`.
+#   If you cannot cite an official source for a number, do not add the number.
+#   Mark anything you are unsure about with `confidence: low` and
+#   `needs_verification: true` — the agent surfaces those to the user instead
+#   of quietly presenting them as fact.
+#
+# WHY IT IS BUILT THIS WAY
+#   Tax parameters go stale every single year. Schedules (when things are due)
+#   are far more stable than amounts (how much). So schedules are encoded as
+#   rules the engine evaluates, and amounts are encoded as dated values with an
+#   expiry. A stale amount produces a loud warning, never a silent wrong answer.
+#
+# =============================================================================
+
+id: gr
+name: Greece
+name_local: Ελλάδα
+currency: EUR
+locale: el-GR
+timezone: Europe/Athens
+
+authorities:
+  - id: aade
+    name: Ανεξάρτητη Αρχή Δημοσίων Εσόδων (ΑΑΔΕ)
+    name_en: Independent Authority for Public Revenue
+    url: https://www.aade.gr
+  - id: efka
+    name: e-ΕΦΚΑ
+    name_en: Electronic National Social Security Fund
+    url: https://www.e-efka.gov.gr
+  - id: gemi
+    name: Γενικό Εμπορικό Μητρώο (ΓΕΜΗ)
+    name_en: General Commercial Registry
+    url: https://www.businessportal.gr
+
+meta:
+  pack_version: "0.1.0"
+  last_reviewed: 2026-08-04
+  # Reviewing this pack means: open each `source` URL, confirm each value, and
+  # bump `verified_on`. Do it at minimum every January, when most Greek tax
+  # parameters change.
+  review_cadence: annual-january
+  disclaimer: >
+    This pack is a community-maintained reading of Greek tax and social
+    security rules. It is not tax advice and carries no warranty. It exists to
+    help you ask your accountant the right question at the right time, and to
+    notice when something has not been done. It does not replace a licensed
+    accountant, and filings remain your legal responsibility.
+
+# -----------------------------------------------------------------------------
+# BUSINESS PROFILE DIMENSIONS
+# Obligations are matched against a profile using `applies_when`. These are the
+# dimensions a Greek profile can express.
+# -----------------------------------------------------------------------------
+profile_schema:
+  legal_form:
+    description: Legal form of the business
+    values:
+      - id: sole_trader
+        label: Ατομική επιχείρηση / ελεύθερος επαγγελματίας
+        label_en: Sole trader / self-employed professional
+      - id: ike
+        label: Ιδιωτική Κεφαλαιουχική Εταιρεία (ΙΚΕ)
+        label_en: Private Company
+      - id: epe
+        label: Εταιρεία Περιορισμένης Ευθύνης (ΕΠΕ)
+      - id: oe_ee
+        label: Ομόρρυθμη / Ετερόρρυθμη Εταιρεία (ΟΕ / ΕΕ)
+      - id: ae
+        label: Ανώνυμη Εταιρεία (ΑΕ)
+  books:
+    description: Accounting books category, which drives VAT return frequency
+    values:
+      - id: simple
+        label: Απλογραφικά βιβλία (single-entry)
+      - id: double
+        label: Διπλογραφικά βιβλία (double-entry)
+  vat_status:
+    values:
+      - id: registered
+        label: Normal VAT regime
+      - id: exempt_small
+        label: Απαλλαγή μικρών επιχειρήσεων (small-business VAT exemption)
+      - id: not_registered
+        label: Not VAT registered
+
+# -----------------------------------------------------------------------------
+# OBLIGATIONS
+#
+# `schedule.frequency`  monthly | quarterly | annual | once
+# `schedule.due`        how to turn a period into a due date:
+#     rule: last_business_day_of_month  -> last working day of the target month
+#           day_of_month                -> a specific day (rolled forward if
+#                                          it falls on a weekend/holiday)
+#           fixed_date                  -> a literal calendar date
+#     months_after_period_end           -> offset from the end of the period
+#
+# `reminders`  days before the due date at which the agent should escalate.
+# `owner`      who normally performs it — `accountant`, `you`, or `either`.
+#              This is what makes the accountant-accountability report possible.
+# -----------------------------------------------------------------------------
+obligations:
+
+  # --- VAT -------------------------------------------------------------------
+
+  - id: gr.vat.return.quarterly
+    name: Περιοδική δήλωση ΦΠΑ (τρίμηνο)
+    name_en: Periodic VAT return (quarterly)
+    category: vat
+    authority: aade
+    owner: accountant
+    applies_when:
+      books: [simple]
+      vat_status: [registered]
+    schedule:
+      frequency: quarterly
+      due:
+        rule: last_business_day_of_month
+        months_after_period_end: 1
+    reminders: [30, 14, 7, 3, 1]
+    penalty_if_late: >
+      Πρόστιμο εκπρόθεσμης δήλωσης plus interest on any unpaid VAT. A late
+      return is one of the most common and most avoidable penalties for a
+      one-person business.
+    what_you_must_supply: >
+      All sales invoices issued in the quarter and all purchase invoices you
+      intend to deduct input VAT on. Anything missing at filing time cannot be
+      deducted in this period.
+    source: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/fpa
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: high
+
+  - id: gr.vat.return.monthly
+    name: Περιοδική δήλωση ΦΠΑ (μήνας)
+    name_en: Periodic VAT return (monthly)
+    category: vat
+    authority: aade
+    owner: accountant
+    applies_when:
+      books: [double]
+      vat_status: [registered]
+    schedule:
+      frequency: monthly
+      due:
+        rule: last_business_day_of_month
+        months_after_period_end: 1
+    reminders: [14, 7, 3, 1]
+    notes: >
+      Businesses keeping double-entry books file monthly. Note that newly
+      established businesses on single-entry books have in some periods been
+      required to file monthly for an initial window — confirm your own case
+      with your accountant rather than assuming the quarterly rule.
+    source: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/fpa
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: medium
+
+  - id: gr.vies.recapitulative
+    name: Ανακεφαλαιωτικός πίνακας ενδοκοινοτικών παραδόσεων/παροχών (VIES)
+    name_en: VIES recapitulative statement
+    category: vat
+    authority: aade
+    owner: accountant
+    applies_when:
+      vat_status: [registered]
+      has_intra_eu_b2b: true
+    schedule:
+      frequency: monthly
+      due:
+        rule: day_of_month
+        months_after_period_end: 1
+        day: 26
+    reminders: [10, 5, 2, 1]
+    notes: >
+      Highly relevant if you invoice business clients in other EU member states
+      — a common situation for a designer. Services to an EU business with a
+      valid VAT number are generally reverse-charged (no Greek VAT on the
+      invoice) but must still be reported here.
+    source: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/fpa
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: medium
+
+  - id: gr.oss.return
+    name: Δήλωση OSS (One Stop Shop)
+    name_en: OSS return
+    category: vat
+    authority: aade
+    owner: accountant
+    applies_when:
+      registered_for_oss: true
+    schedule:
+      frequency: quarterly
+      due:
+        rule: day_of_month
+        months_after_period_end: 1
+        day: 31
+    reminders: [14, 7, 3, 1]
+    notes: >
+      Only applies if you sell digital services to consumers (B2C) in other EU
+      countries and are registered for the OSS scheme.
+    source: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/fpa
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: low
+    needs_verification: true
+
+  # --- Social security -------------------------------------------------------
+
+  - id: gr.efka.contributions
+    name: Ασφαλιστικές εισφορές e-ΕΦΚΑ (μη μισθωτοί)
+    name_en: e-EFKA social security contributions (non-salaried)
+    category: social_security
+    authority: efka
+    owner: you
+    applies_when:
+      legal_form: [sole_trader]
+    schedule:
+      frequency: monthly
+      due:
+        rule: last_business_day_of_month
+        months_after_period_end: 1
+    reminders: [10, 5, 2, 1]
+    penalty_if_late: >
+      Late contributions accrue surcharges and can cost you your ασφαλιστική
+      ενημερότητα (insurance clearance certificate), which you may need to get
+      paid by public-sector clients or to complete other filings.
+    notes: >
+      The ειδοποιητήριο (payment notice) for a given month is posted on the
+      e-EFKA portal and is payable up to the last working day of the following
+      month. This one is almost always yours to pay, not your accountant's —
+      but your accountant should be telling you the amount changed.
+    source: https://www.e-efka.gov.gr/el/eisfores-mi-misthoton-ypohreoseis-asfalisis
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: high
+
+  # --- Income tax ------------------------------------------------------------
+
+  - id: gr.income_tax.return
+    name: Δήλωση φορολογίας εισοδήματος (Ε1 / Ε3)
+    name_en: Annual income tax return (E1 / E3)
+    category: income_tax
+    authority: aade
+    owner: accountant
+    applies_when:
+      legal_form: [sole_trader]
+    schedule:
+      frequency: annual
+      due:
+        rule: fixed_day_in_year
+        month: 7
+        day: 15
+        years_after_period_end: 1
+    reminders: [90, 60, 30, 14, 7, 3, 1]
+    often_extended: true
+    notes: >
+      The statutory deadline has been 15 July of the following year, and is
+      frequently extended by ministerial decision — but never plan around an
+      extension that has not been announced. Early filing has carried a lump-sum
+      payment discount (see the `income_tax_early_filing_discount` parameter),
+      which is free money your accountant should be helping you capture.
+      E3 (business financial data) is filed alongside E1; E2 as well if you have
+      property income.
+    source: https://www.aade.gr/polites/eisodima
+    verified_on: 2026-08-04
+    review_by: 2027-05-31
+    confidence: high
+
+  - id: gr.income_tax.first_installment
+    name: Πρώτη δόση φόρου εισοδήματος
+    name_en: First income tax installment
+    category: income_tax
+    authority: aade
+    owner: you
+    applies_when:
+      legal_form: [sole_trader]
+    schedule:
+      frequency: annual
+      due:
+        rule: fixed_day_in_year
+        month: 7
+        day: 31
+        years_after_period_end: 1
+    reminders: [30, 14, 7, 3, 1]
+    notes: >
+      The assessed amount includes both the tax on the year just filed and the
+      προκαταβολή φόρου (prepayment) toward the current year — which is why the
+      bill is much larger than people expect. The number of installments and
+      their dates are set annually; confirm against your εκκαθαριστικό.
+    source: https://www.aade.gr/polites/eisodima
+    verified_on: 2026-08-04
+    review_by: 2027-05-31
+    confidence: medium
+
+  # --- Digital compliance ----------------------------------------------------
+
+  - id: gr.mydata.transmission
+    name: Διαβίβαση παραστατικών στο myDATA
+    name_en: Transmission of documents to myDATA
+    category: digital_compliance
+    authority: aade
+    owner: either
+    applies_when:
+      legal_form: [sole_trader, ike, epe, oe_ee, ae]
+    schedule:
+      frequency: monthly
+      due:
+        rule: last_business_day_of_month
+        months_after_period_end: 1
+    reminders: [10, 5, 2]
+    notes: >
+      Sales documents must reach myDATA and receive a ΜΑΡΚ (unique registration
+      number) to be valid. Timing depends on how you issue documents — via a
+      certified provider, an ERP, or the free AADE `timologio` app. Treat this
+      monthly checkpoint as "reconcile what myDATA holds against what I
+      actually issued", which is the check that catches missing income before
+      the tax authority does.
+    source: https://www.aade.gr/mydata
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: medium
+
+  - id: gr.einvoicing.b2b_mandate
+    name: Υποχρεωτική ηλεκτρονική τιμολόγηση B2B — έναρξη για μικρές επιχειρήσεις
+    name_en: Mandatory B2B e-invoicing — small business start date
+    category: digital_compliance
+    authority: aade
+    owner: you
+    applies_when:
+      legal_form: [sole_trader, ike, epe, oe_ee, ae]
+    schedule:
+      frequency: once
+      due:
+        rule: fixed_date
+        date: 2026-10-01
+    reminders: [90, 60, 30, 14, 7, 1]
+    action_required: >
+      From this date, invoices to business customers must be issued
+      electronically — through a certified e-invoicing provider (Πάροχος
+      Ηλεκτρονικής Τιμολόγησης) or through AADE's free `timologio` /
+      `myDATAapp` tools. Decide which route you are taking and have it working
+      before the date. If you currently issue PDFs by hand or through a generic
+      invoicing tool, that will no longer be sufficient on its own.
+    notes: >
+      Reported phasing: businesses above €1m turnover earlier in 2026, then all
+      remaining businesses — including one-person operations — from
+      1 October 2026, with a transitional adjustment period reported through
+      the end of December 2026. Penalties for non-compliance have been reported
+      at up to €2,500. VERIFY the exact date and your own transition terms
+      against the AADE announcement before acting, and re-check whether the
+      date has moved: this mandate has been rescheduled before.
+    source: https://www.aade.gr/mydata
+    secondary_sources:
+      - https://www.protothema.gr/economy/article/1858226/ilektroniki-timologisi-aade-upohreotiki-efarmogi-apo-1i-oktovriou-2026-gia-oles-tis-epiheiriseis/
+      - https://www.taxheaven.gr/news/71646/ypoxrewtikh-apo-222026-h-hlektronikh-timologhsh-stis-b2b-synallages
+    verified_on: 2026-08-04
+    review_by: 2026-09-15
+    confidence: medium
+    needs_verification: true
+
+# -----------------------------------------------------------------------------
+# PARAMETERS
+# Numeric values used by the estimators. Each is a list of dated values so that
+# historical periods are computed with the rates that applied at the time.
+# -----------------------------------------------------------------------------
+parameters:
+
+  vat_standard_rate:
+    label: Κανονικός συντελεστής ΦΠΑ
+    label_en: Standard VAT rate
+    unit: ratio
+    values:
+      - value: 0.24
+        effective_from: 2021-01-01
+    applies_to: >
+      Design and other professional services supplied to Greek customers.
+      Reduced rates exist for other categories and for certain islands; this
+      pack does not model them.
+    source: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/fpa
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: high
+
+  vat_exemption_turnover_threshold:
+    label: Όριο απαλλαγής μικρών επιχειρήσεων από ΦΠΑ
+    label_en: Small-business VAT exemption turnover threshold
+    unit: EUR
+    values:
+      - value: 10000
+        effective_from: 2019-01-01
+    source: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/fpa
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: medium
+    needs_verification: true
+
+  income_tax_scale_business:
+    label: Κλίμακα φορολογίας εισοδήματος από επιχειρηματική δραστηριότητα
+    label_en: Income tax scale for business income
+    unit: brackets
+    values:
+      - effective_from: 2020-01-01
+        value:
+          - up_to: 10000
+            rate: 0.09
+          - up_to: 20000
+            rate: 0.22
+          - up_to: 30000
+            rate: 0.28
+          - up_to: 40000
+            rate: 0.36
+          - up_to: null
+            rate: 0.44
+    source: https://www.aade.gr/polites/eisodima
+    verified_on: 2026-08-04
+    review_by: 2026-12-31
+    confidence: medium
+    warning: >
+      A reform of the income tax scale was announced for income earned from
+      2026 onward (assessed in 2027), including relief tied to age and number
+      of children. This pack still encodes the long-standing scale. Any
+      estimate for tax year 2026 or later must be treated as indicative only
+      until this parameter is updated against the enacted law. See
+      `pending_changes`.
+
+  income_tax_prepayment_rate:
+    label: Συντελεστής προκαταβολής φόρου (φυσικά πρόσωπα, επιχειρηματική δραστηριότητα)
+    label_en: Income tax prepayment rate for individuals with business activity
+    unit: ratio
+    values:
+      - value: 0.55
+        effective_from: 2021-01-01
+    notes: >
+      Charged on top of the assessed tax, as an advance against next year's
+      liability. Reduced rates have applied to newly established professionals
+      in their first years — confirm your own case. A reduction of the headline
+      55% rate has been under discussion.
+    source: https://www.aade.gr/polites/eisodima
+    verified_on: 2026-08-04
+    review_by: 2026-12-31
+    confidence: medium
+    needs_verification: true
+
+  trade_fee:
+    label: Τέλος επιτηδεύματος
+    label_en: Annual trade fee
+    unit: EUR
+    values:
+      - value: 0
+        effective_from: 2024-01-01
+        note: Abolished for natural persons (sole traders and self-employed) from tax year 2024.
+    source: https://www.aade.gr/polites/eisodima
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: medium
+    notes: >
+      Still applies to legal entities. If you are a sole trader and an
+      assessment includes a trade fee for tax year 2024 or later, question it.
+
+  withholding_tax_professional_services:
+    label: Παρακράτηση φόρου σε αμοιβές για τεχνικές/επιστημονικές/λοιπές υπηρεσίες
+    label_en: Withholding tax on professional service fees
+    unit: ratio
+    values:
+      - value: 0.20
+        effective_from: 2014-01-01
+    notes: >
+      When you invoice a Greek business, the client generally withholds this
+      percentage of your net fee and pays it to the tax authority on your
+      behalf. It is a prepayment of your own income tax, not an extra cost —
+      but it means your bank receives less than your invoice total, and you
+      must track it or you will overpay at year end. This pack tracks it per
+      invoice for exactly that reason.
+    source: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/parakratoymenoi-foroi
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: medium
+
+  efka_contribution_categories:
+    label: Ασφαλιστικές κατηγορίες μη μισθωτών
+    label_en: Social security contribution categories for non-salaried
+    unit: EUR_per_month
+    values: []
+    source: https://www.e-efka.gov.gr/el/egkyklioi-kai-genika-eggrapha/egkyklios-62026
+    verified_on: 2026-08-04
+    review_by: 2027-01-31
+    confidence: low
+    needs_verification: true
+    warning: >
+      DELIBERATELY EMPTY. e-EFKA contribution amounts change every January and
+      differ by category, by whether auxiliary pension and lump-sum branches
+      apply, and by former-fund history. Publishing a guessed table here would
+      be worse than publishing nothing, because it would silently produce wrong
+      cash-flow numbers all year. Instead: set `efka_monthly_amount` in your own
+      profile, copied from your actual e-EFKA ειδοποιητήριο. The agent will
+      remind you to re-check it each January. Contributions for 2026 were
+      reported as increased by roughly 2.5% over 2025.
+
+  income_tax_early_filing_discount:
+    label: Έκπτωση για έγκαιρη υποβολή και εφάπαξ εξόφληση
+    label_en: Discount for early filing and lump-sum payment
+    unit: ratio
+    values:
+      - effective_from: 2026-01-01
+        value:
+          - file_by: "06-15"
+            discount: 0.03
+          - file_by: "07-15"
+            discount: 0.02
+    notes: >
+      Observed for the 2026 filing season (tax year 2025): 3% discount on the
+      income tax if the return was filed by 15 June and the tax paid in full by
+      31 July, 2% for returns filed between 16 June and 15 July. The exact
+      tiers are set each year — treat as indicative and confirm annually.
+    source: https://www.aade.gr/polites/eisodima
+    verified_on: 2026-08-04
+    review_by: 2027-05-31
+    confidence: medium
+
+# -----------------------------------------------------------------------------
+# PENDING CHANGES
+# Announced-but-not-yet-encoded changes. The agent raises these proactively.
+# This section is the direct answer to "my accountant never tells me when
+# something changes". Move an entry into `obligations` or `parameters` once it
+# is enacted and verified, and delete it from here.
+# -----------------------------------------------------------------------------
+pending_changes:
+
+  - id: gr.change.einvoicing_all_business_2026_10
+    title: Mandatory B2B e-invoicing extends to all businesses
+    title_el: Υποχρεωτική ηλεκτρονική τιμολόγηση B2B για όλες τις επιχειρήσεις
+    expected_date: 2026-10-01
+    affects: [sole_trader, ike, epe, oe_ee, ae]
+    impact: high
+    summary: >
+      Small businesses, including one-person operations, must issue B2B
+      invoices electronically via a certified provider or AADE's free tools,
+      with a reported transitional period to end-December 2026 and penalties
+      reported up to €2,500.
+    what_to_do: >
+      Choose an issuing route now and test it before 1 October. Ask your
+      accountant in writing which provider they want you on and who is
+      configuring it. Get the answer in writing — this is precisely the kind of
+      change that gets missed.
+    confidence: medium
+    needs_verification: true
+    sources:
+      - https://www.aade.gr/mydata
+      - https://www.protothema.gr/economy/article/1858226/ilektroniki-timologisi-aade-upohreotiki-efarmogi-apo-1i-oktovriou-2026-gia-oles-tis-epiheiriseis/
+
+  - id: gr.change.income_tax_scale_2026
+    title: Announced income tax reform for income earned from 2026
+    title_el: Νέα φορολογική κλίμακα για εισοδήματα από το 2026
+    expected_date: 2027-01-01
+    affects: [sole_trader]
+    impact: high
+    summary: >
+      A revised income tax scale was announced for income earned from 2026
+      (assessed in 2027), with relief linked to taxpayer age and number of
+      children, alongside changes to the imputed-income regime for the
+      self-employed.
+    what_to_do: >
+      Any 2026 tax estimate this tool produces uses the older scale and is
+      therefore indicative. Before relying on a 2026 number for cash planning,
+      confirm the enacted scale and update `income_tax_scale_business`.
+    confidence: medium
+    needs_verification: true
+    sources:
+      - https://www.aade.gr/polites/eisodima
+
+  - id: gr.change.imputed_income_regime
+    title: Imputed minimum income (τεκμαρτό) for the self-employed keeps moving
+    title_el: Αλλαγές στο τεκμαρτό εισόδημα ελεύθερων επαγγελματιών
+    expected_date: 2027-01-01
+    affects: [sole_trader]
+    impact: high
+    summary: >
+      The minimum imputed net income regime for the self-employed (introduced
+      by L.5073/2023) sets a taxable income floor derived from the minimum wage
+      and years in business, regardless of what you actually earned. It has been
+      amended repeatedly, including exemptions and reductions, and it moves
+      automatically whenever the minimum wage moves.
+    what_to_do: >
+      This pack deliberately does NOT compute your imputed floor — the formula
+      and its exemptions change too often to encode safely, and getting it wrong
+      would understate your tax. Ask your accountant for your specific imputed
+      floor figure each year and record it in your profile as
+      `imputed_income_floor`. The estimator will then compare it against your
+      declared profit and warn you when the floor is what actually binds.
+    confidence: medium
+    needs_verification: true
+    sources:
+      - https://www.aade.gr/polites/eisodima
+
+# -----------------------------------------------------------------------------
+# WATCH SOURCES
+# URLs the rule-change watcher polls. It stores a content hash and reports when
+# a page changes, so you hear about a change from your own tooling rather than
+# from a penalty notice.
+# -----------------------------------------------------------------------------
+watch_sources:
+  - id: aade_news
+    label: ΑΑΔΕ — Νέα και ανακοινώσεις
+    url: https://www.aade.gr/news
+    relevance: high
+  - id: aade_mydata
+    label: ΑΑΔΕ — myDATA
+    url: https://www.aade.gr/mydata
+    relevance: high
+  - id: aade_calendar
+    label: ΑΑΔΕ — Φορολογικό ημερολόγιο
+    url: https://www.aade.gr/forologiko-imerologio
+    relevance: high
+  - id: efka_circulars
+    label: e-ΕΦΚΑ — Εγκύκλιοι
+    url: https://www.e-efka.gov.gr/el/egkyklioi-kai-genika-eggrapha
+    relevance: high
+  - id: efka_nonsalaried
+    label: e-ΕΦΚΑ — Εισφορές μη μισθωτών
+    url: https://www.e-efka.gov.gr/el/eisfores-mi-misthoton-ypohreoseis-asfalisis
+    relevance: medium

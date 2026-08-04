@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local business data — never commit this. It is your books.
+data/
+.logistis/
+*.local.json
+.env

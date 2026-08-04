@@ -1,0 +1,28 @@
+# Greek public holidays, used to resolve "last working day" deadlines.
+#
+# Movable feasts are derived in code from Orthodox Easter (see
+# src/rules/businessDays.ts) rather than listed year by year, so this file does
+# not go stale.
+#
+# Caveat worth knowing: a deadline landing on a non-working day is normally
+# rolled forward, but AADE occasionally moves a deadline by decision for
+# reasons no calendar can predict (system outages, extensions). Treat computed
+# dates as "the date to work back from", not as gospel — and let the rule-change
+# watcher catch announced shifts.
+
+fixed:
+  - { month: 1,  day: 1,  name: Πρωτοχρονιά,                 name_en: New Year's Day }
+  - { month: 1,  day: 6,  name: Θεοφάνεια,                   name_en: Epiphany }
+  - { month: 3,  day: 25, name: Ευαγγελισμός / Εθνική εορτή, name_en: Independence Day }
+  - { month: 5,  day: 1,  name: Εργατική Πρωτομαγιά,         name_en: Labour Day }
+  - { month: 8,  day: 15, name: Κοίμηση της Θεοτόκου,        name_en: Assumption }
+  - { month: 10, day: 28, name: Επέτειος του «Όχι»,          name_en: Ohi Day }
+  - { month: 12, day: 25, name: Χριστούγεννα,                name_en: Christmas Day }
+  - { month: 12, day: 26, name: Σύναξη της Θεοτόκου,         name_en: Boxing Day }
+
+# Offsets in days from Orthodox Easter Sunday.
+movable:
+  - { offset: -48, name: Καθαρά Δευτέρα,      name_en: Clean Monday }
+  - { offset: -2,  name: Μεγάλη Παρασκευή,    name_en: Good Friday }
+  - { offset: 1,   name: Δευτέρα του Πάσχα,   name_en: Easter Monday }
+  - { offset: 50,  name: Αγίου Πνεύματος,     name_en: Whit Monday }
