@@ -31,6 +31,8 @@ export interface ObligationInstance {
   /** Negative when overdue. */
   days_until_due: number;
   reminders: number[];
+  /** Set when this is one payment in a series, e.g. 3 of 8. */
+  installment?: { sequence: number; of: number };
   often_extended?: boolean;
   penalty_if_late?: string;
   what_you_must_supply?: string;
@@ -127,39 +129,73 @@ function periodsFor(def: ObligationDef, fromYear: number, toYear: number): Perio
   return out;
 }
 
-function dueDateFor(
+/**
+ * The due date(s) a period produces.
+ *
+ * Usually one, but an installment series produces several — income tax assessed
+ * once and paid over eight months is eight separate chances to miss a payment,
+ * and the fifth one in November is exactly the one that gets forgotten.
+ */
+interface DueOccurrence {
+  /** Appended to the period key to keep instance ids unique. */
+  suffix: string;
+  due: IsoDate;
+  /** Human label, e.g. "installment 3 of 8". */
+  label?: string;
+  sequence?: number;
+  of?: number;
+}
+
+function dueDatesFor(
   def: ObligationDef,
   period: Period,
   holidays: HolidayPack,
   packId?: string,
-): IsoDate | undefined {
+): DueOccurrence[] {
   const spec = def.schedule.due;
 
   switch (spec.rule) {
     case 'fixed_date':
-      return spec.date;
+      return spec.date ? [{ suffix: '', due: spec.date }] : [];
 
     case 'last_business_day_of_month': {
       const { y, m } = addMonths(period.endY, period.endM, spec.months_after_period_end ?? 1);
-      return lastBusinessDayOfMonth(y, m, holidays, packId);
+      return [{ suffix: '', due: lastBusinessDayOfMonth(y, m, holidays, packId) }];
     }
 
     case 'day_of_month': {
       const { y, m } = addMonths(period.endY, period.endM, spec.months_after_period_end ?? 1);
       // A `day` past the end of a short month means "end of month".
       const day = Math.min(spec.day ?? 1, lastDayOfMonth(y, m));
-      return rollForward(toIso({ y, m, d: day }), holidays, packId);
+      return [{ suffix: '', due: rollForward(toIso({ y, m, d: day }), holidays, packId) }];
     }
 
     case 'fixed_day_in_year': {
       const y = period.endY + (spec.years_after_period_end ?? 0);
       const m = spec.month ?? 1;
       const day = Math.min(spec.day ?? 1, lastDayOfMonth(y, m));
-      return rollForward(toIso({ y, m, d: day }), holidays, packId);
+      return [{ suffix: '', due: rollForward(toIso({ y, m, d: day }), holidays, packId) }];
+    }
+
+    case 'installment_series': {
+      const count = spec.count ?? 1;
+      const offset = spec.months_after_period_end ?? 1;
+      const out: DueOccurrence[] = [];
+      for (let i = 0; i < count; i++) {
+        const { y, m } = addMonths(period.endY, period.endM, offset + i);
+        out.push({
+          suffix: `-i${i + 1}of${count}`,
+          due: lastBusinessDayOfMonth(y, m, holidays, packId),
+          label: `installment ${i + 1} of ${count}`,
+          sequence: i + 1,
+          of: count,
+        });
+      }
+      return out;
     }
 
     default:
-      return undefined;
+      return [];
   }
 }
 
@@ -190,31 +226,34 @@ export function resolveInstances(args: {
     // Periods can precede their due date by a year (annual returns), so widen
     // the period search window and filter on the resulting due date instead.
     for (const period of periodsFor(def, fromYear - 2, toYear + 1)) {
-      const due = dueDateFor(def, period, holidays, packId);
-      if (!due) continue;
-      if (due < from || due > to) continue;
+      for (const occurrence of dueDatesFor(def, period, holidays, packId)) {
+        const due = occurrence.due;
+        if (due < from || due > to) continue;
 
-      out.push({
-        instance_id: `${def.id}:${period.key}`,
-        obligation_id: def.id,
-        name: def.name,
-        name_en: def.name_en,
-        category: def.category,
-        owner: def.owner,
-        period_key: period.key,
-        period_start: period.start,
-        period_end: period.end,
-        due_date: due,
-        days_until_due: daysBetween(today, due),
-        reminders: def.reminders ?? [30, 14, 7, 3, 1],
-        often_extended: def.often_extended,
-        penalty_if_late: def.penalty_if_late,
-        what_you_must_supply: def.what_you_must_supply,
-        action_required: def.action_required,
-        needs_verification: def.needs_verification,
-        confidence: def.confidence,
-        source: def.source,
-      });
+        const periodKey = `${period.key}${occurrence.suffix}`;
+        out.push({
+          instance_id: `${def.id}:${periodKey}`,
+          obligation_id: def.id,
+          name: occurrence.label ? `${def.name} — ${occurrence.label}` : def.name,
+          name_en: def.name_en,
+          category: def.category,
+          owner: def.owner,
+          period_key: periodKey,
+          period_start: period.start,
+          period_end: period.end,
+          due_date: due,
+          days_until_due: daysBetween(today, due),
+          reminders: def.reminders ?? [30, 14, 7, 3, 1],
+          installment: occurrence.sequence ? { sequence: occurrence.sequence, of: occurrence.of! } : undefined,
+          often_extended: def.often_extended,
+          penalty_if_late: def.penalty_if_late,
+          what_you_must_supply: def.what_you_must_supply,
+          action_required: def.action_required,
+          needs_verification: def.needs_verification,
+          confidence: def.confidence,
+          source: def.source,
+        });
+      }
     }
   }
 

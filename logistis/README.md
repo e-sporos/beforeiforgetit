@@ -19,7 +19,7 @@ The design follows directly from those three failures:
 
 | Failure | What Logistis does about it |
 |---|---|
-| "Nobody told me the rules changed" | A watcher that polls official sources and reports what moved, plus a hand-maintained `pending_changes` list of announced-but-not-yet-in-force changes |
+| "Nobody told me the rules changed" | A watcher polling both government platforms and the Greek tax press, plus a hand-maintained `pending_changes` list of announced-but-not-yet-in-force changes |
 | "They forgot to file it" | A deadline engine that resolves real due dates — weekends and Greek public holidays included — and escalates as they approach |
 | "I only found out when the penalty arrived" | Every obligation has an owner and an audit record; the accountant scorecard turns a vague grievance into a dated list |
 
@@ -110,13 +110,41 @@ periods it was never watching as "missed". Back-fill history deliberately with
 **Rules** — `rules_parameter`, `rules_pending_changes`, `rules_check_sources`,
 `rules_change_assess`, `rules_changes_list`, `pack_health`
 
+## Two tiers of sources
+
+The watcher polls both, and never conflates them:
+
+**`official`** — ΑΑΔΕ (news, myDATA, tax calendar, VAT, income tax), e-ΕΦΚΑ
+(circulars, non-salaried contributions, press releases), the Ministry of
+National Economy and Finance, Εθνικό Τυπογραφείο (ΦΕΚ), ΓΕΜΗ, gov.gr.
+Authoritative, but slow — a change is often law and widely discussed before the
+relevant page updates.
+
+**`community`** — Taxheaven, Forin.gr, e-forologia, the Οικονομικό Επιμελητήριο,
+and the financial press (Capital tax section, Ναυτεμπορική, MoneyReview). This
+is where Greek accountants actually get their daily information: faster, and
+written in terms of practical consequences. Also secondary — it reports
+proposals as decisions, and it contains errors.
+
+**The rule: community sources are an early warning, never a citation.** Nothing
+found there updates a value in the pack until an official source confirms it;
+until then it lives in `pending_changes` with `confidence: low`.
+
+One practical payoff: Taxheaven and Forin publish independent monthly obligation
+calendars. If one of them disagrees with a date Logistis computed, **Logistis is
+probably wrong** — a computed date cannot know about an extension published last
+Tuesday. That cross-check costs one page load and is the most valuable check
+available.
+
 ## What the Greek pack covers
 
 Quarterly and monthly ΦΠΑ returns · VIES recapitulative statements · OSS ·
-e-ΕΦΚΑ contributions · the annual Ε1/Ε3 return and its first installment ·
-myDATA transmission · the mandatory B2B e-invoicing rollout · standard VAT rate ·
+e-ΕΦΚΑ contributions · the annual Ε1/Ε3 return · income tax in eight monthly
+installments (July through February) · the annual ΓΕΜΗ fee · myDATA
+transmission · the mandatory B2B e-invoicing rollout · standard VAT rate ·
 income tax brackets · prepayment rate · withholding tax on professional fees ·
-the abolition of τέλος επιτηδεύματος for natural persons.
+early-filing discount tiers · the abolition of τέλος επιτηδεύματος for natural
+persons.
 
 Due dates account for weekends, fixed Greek public holidays, and the movable
 Orthodox Easter feasts (Καθαρά Δευτέρα, Μεγάλη Παρασκευή, Δευτέρα του Πάσχα,

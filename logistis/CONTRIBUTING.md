@@ -61,10 +61,26 @@ first-class feature, not a to-do list: it is how the agent tells a user about a
 change before it bites. Move entries into `obligations` or `parameters` once
 enacted, and delete them from here.
 
-**`watch_sources`** — official pages worth polling. Prefer stable index pages
-(a circulars listing, a news index) over deep links that rot. Avoid pages with
-rotating content — the watcher hashes text, and a page that changes on every
-load trains the user to ignore alerts.
+**`watch_sources`** — pages worth polling, each with a `tier`:
+
+- `official` — government platforms. Authoritative, slow, legalistic.
+- `community` — the professional tax press and portals. Fast, practical,
+  secondary.
+
+Include both. Official sources alone will tell you about a change weeks after
+every accountant in the country already knows; community sources alone will
+have you acting on a proposal that never became law. Community findings are an
+early warning that must be confirmed officially before changing a value —
+enforce that in your pack's notes as the Greek one does.
+
+Especially valuable: any independent published deadline calendar for your
+jurisdiction. It is the cheapest possible check that the schedule engine is
+producing correct dates.
+
+Prefer stable index pages (a circulars listing, a news index, a monthly
+calendar) over deep links that rot. Avoid pages with rotating content — the
+watcher hashes text, and a page that changes on every load trains the user to
+ignore alerts.
 
 ### Schedule rules available
 

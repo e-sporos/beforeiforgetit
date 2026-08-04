@@ -278,9 +278,9 @@ obligations:
     review_by: 2027-05-31
     confidence: high
 
-  - id: gr.income_tax.first_installment
-    name: Πρώτη δόση φόρου εισοδήματος
-    name_en: First income tax installment
+  - id: gr.income_tax.installments
+    name: Δόσεις φόρου εισοδήματος
+    name_en: Income tax installments
     category: income_tax
     authority: aade
     owner: you
@@ -289,20 +289,70 @@ obligations:
     schedule:
       frequency: annual
       due:
-        rule: fixed_day_in_year
-        month: 7
-        day: 31
-        years_after_period_end: 1
-    reminders: [30, 14, 7, 3, 1]
+        rule: installment_series
+        # Tax year ends in December; the first installment falls due at the end
+        # of July the following year, then monthly through February.
+        months_after_period_end: 7
+        count: 8
+    reminders: [14, 7, 3, 1]
+    penalty_if_late: >
+      A missed installment accrues interest and can cost you your φορολογική
+      ενημερότητα (tax clearance), which you may need in order to be paid by
+      public-sector clients.
     notes: >
+      Observed for the 2026 season (tax year 2025): eight monthly installments,
+      the first due 31 July 2026 and the last by the last working day of
+      February 2027. Paying the whole amount in one go by the first deadline
+      secures the early-filing discount — see the
+      `income_tax_early_filing_discount` parameter.
+
       The assessed amount includes both the tax on the year just filed and the
-      προκαταβολή φόρου (prepayment) toward the current year — which is why the
-      bill is much larger than people expect. The number of installments and
-      their dates are set annually; confirm against your εκκαθαριστικό.
+      προκαταβολή φόρου toward the current year, which is why the bill is much
+      larger than people expect. The number of installments is set annually by
+      decision — confirm against your own εκκαθαριστικό, which is authoritative
+      for your case. Installments five through eight, landing in November
+      through February, are the ones people forget.
     source: https://www.aade.gr/polites/eisodima
+    secondary_sources:
+      - https://www.taxheaven.gr/calendar
+      - https://www.forin.gr/calendar
     verified_on: 2026-08-04
     review_by: 2027-05-31
     confidence: medium
+
+  # --- Registry ---------------------------------------------------------------
+
+  - id: gr.gemi.annual_fee
+    name: Ετήσιο τέλος τήρησης μερίδας Γ.Ε.ΜΗ.
+    name_en: Annual GEMI registry maintenance fee
+    category: registry
+    authority: gemi
+    owner: you
+    applies_when:
+      legal_form: [sole_trader, ike, epe, oe_ee, ae]
+    schedule:
+      frequency: annual
+      due:
+        rule: fixed_day_in_year
+        month: 3
+        day: 31
+        years_after_period_end: 1
+    reminders: [30, 14, 7, 1]
+    notes: >
+      Small, easily forgotten, and it accumulates silently: unpaid ΓΕΜΗ fees
+      surface years later when you need a certificate or make a filing. Payable
+      within the first quarter of the year for businesses already registered.
+      A separate RF payment code is generated per year of debt. Some sole
+      traders are exempt from certain ΓΕΜΗ obligations — check whether you are
+      actually registered and liable before paying anything.
+    source: https://www.businessportal.gr
+    secondary_sources:
+      - https://gge.mindev.gov.gr/tomeas-emporiou/sixnes-erotiseis-gemh/
+      - https://acci.gr/%CE%B3-%CE%B5-%CE%BC%CE%B7-%CF%84%CE%AD%CE%BB%CE%B7-%CE%B3-%CE%B5-%CE%BC%CE%B7/
+    verified_on: 2026-08-04
+    review_by: 2027-02-28
+    confidence: low
+    needs_verification: true
 
   # --- Digital compliance ----------------------------------------------------
 
@@ -522,12 +572,59 @@ parameters:
     notes: >
       Observed for the 2026 filing season (tax year 2025): 3% discount on the
       income tax if the return was filed by 15 June and the tax paid in full by
-      31 July, 2% for returns filed between 16 June and 15 July. The exact
-      tiers are set each year — treat as indicative and confirm annually.
+      31 July, 2% for returns filed between 16 June and 15 July. A higher tier
+      (reported at 4% for filing by 30 April) has applied to certain categories,
+      including taxpayers participating in legal entities keeping single-entry
+      books — check whether it applies to you rather than assuming it does not.
+
+      This is free money for doing early what you have to do anyway. An
+      accountant who files on 14 July every year is costing you 2-3% of your
+      tax bill for nothing. The exact tiers are set annually — confirm each
+      spring.
+    source: https://www.aade.gr/polites/eisodima
+    secondary_sources:
+      - https://www.taxheaven.gr/calendar
+      - https://www.forin.gr/calendar
+    verified_on: 2026-08-04
+    review_by: 2027-05-31
+    confidence: medium
+
+  income_tax_installment_count:
+    label: Αριθμός δόσεων φόρου εισοδήματος
+    label_en: Number of income tax installments
+    unit: count
+    values:
+      - value: 8
+        effective_from: 2026-01-01
+    notes: >
+      Set by annual decision. Eight monthly installments were used for the 2026
+      season (tax year 2025), the first at end of July and the last at the end
+      of February the following year. Your εκκαθαριστικό is authoritative for
+      your own case.
     source: https://www.aade.gr/polites/eisodima
     verified_on: 2026-08-04
     review_by: 2027-05-31
     confidence: medium
+
+  gemi_annual_fee_sole_trader:
+    label: Ετήσιο τέλος Γ.Ε.ΜΗ. ατομικής επιχείρησης
+    label_en: Annual GEMI fee for a sole trader
+    unit: EUR
+    values:
+      - value: 30
+        effective_from: 2015-03-01
+    notes: >
+      Reported at €30 per year for ατομικές επιχειρήσεις, payable within the
+      first quarter. Different amounts apply to other legal forms. Chamber of
+      commerce subscriptions (επιμελητηριακές συνδρομές) are a separate charge
+      from this fee and are not modelled here.
+    source: https://www.businessportal.gr
+    secondary_sources:
+      - https://gge.mindev.gov.gr/tomeas-emporiou/sixnes-erotiseis-gemh/
+    verified_on: 2026-08-04
+    review_by: 2027-02-28
+    confidence: low
+    needs_verification: true
 
 # -----------------------------------------------------------------------------
 # PENDING CHANGES
@@ -605,29 +702,186 @@ pending_changes:
       - https://www.aade.gr/polites/eisodima
 
 # -----------------------------------------------------------------------------
+# SOURCE POLICY
+#
+# Two tiers, and the difference between them matters.
+#
+# `official`   Government platforms. Authoritative: if an official source and a
+#              commentary source disagree, the official source wins and the
+#              disagreement is worth reporting. But they are SLOW — a change is
+#              often law, and being discussed by every accountant in the
+#              country, before the relevant AADE page is updated. Official
+#              sources also publish in dense legal language, and a ΦΕΚ
+#              publication tells you a rule exists without telling you what it
+#              means for a one-person design business.
+#
+# `community`  The Greek tax press and professional portals — taxheaven,
+#              forin, e-forologia and the financial press. These are where
+#              accountants actually get their daily information. They are
+#              fast, they explain consequences in practical terms, and their
+#              monthly obligation calendars are more usable than anything
+#              official. They are also secondary: they contain errors, they
+#              report proposals as though they were decisions, and headlines
+#              overstate. Some are paywalled or block automated fetching.
+#
+# THE RULE: community sources are an EARLY WARNING, never a citation.
+# Anything found in a community source must be confirmed against an official
+# source before it changes a value in this pack. Until confirmed, it belongs in
+# `pending_changes` with `confidence: low`, not in `parameters`.
+#
+# This mirrors how a good accountant actually works: they read taxheaven every
+# morning, then check the ΦΕΚ before telling a client to do something.
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 # WATCH SOURCES
 # URLs the rule-change watcher polls. It stores a content hash and reports when
 # a page changes, so you hear about a change from your own tooling rather than
 # from a penalty notice.
+#
+# Prefer stable index pages (a news index, a circulars listing, a monthly
+# calendar) over deep links, which rot. Pages that change on every load train
+# you to ignore alerts — if a source turns out to be noisy, drop its relevance
+# or remove it.
 # -----------------------------------------------------------------------------
 watch_sources:
+
+  # --- Official: tax authority -----------------------------------------------
   - id: aade_news
     label: ΑΑΔΕ — Νέα και ανακοινώσεις
     url: https://www.aade.gr/news
+    tier: official
     relevance: high
   - id: aade_mydata
-    label: ΑΑΔΕ — myDATA
+    label: ΑΑΔΕ — myDATA και ηλεκτρονική τιμολόγηση
     url: https://www.aade.gr/mydata
+    tier: official
     relevance: high
+    note: The e-invoicing mandate rollout is announced here first.
   - id: aade_calendar
     label: ΑΑΔΕ — Φορολογικό ημερολόγιο
     url: https://www.aade.gr/forologiko-imerologio
+    tier: official
     relevance: high
+  - id: aade_vat
+    label: ΑΑΔΕ — ΦΠΑ
+    url: https://www.aade.gr/epiheiriseis/forologikes-ypiresies/fpa
+    tier: official
+    relevance: high
+  - id: aade_income
+    label: ΑΑΔΕ — Φορολογία εισοδήματος
+    url: https://www.aade.gr/polites/eisodima
+    tier: official
+    relevance: high
+  - id: myaade_portal
+    label: myAADE — ψηφιακή πύλη
+    url: https://www.aade.gr/myaade
+    tier: official
+    relevance: medium
+
+  # --- Official: social security ---------------------------------------------
   - id: efka_circulars
-    label: e-ΕΦΚΑ — Εγκύκλιοι
+    label: e-ΕΦΚΑ — Εγκύκλιοι και γενικά έγγραφα
     url: https://www.e-efka.gov.gr/el/egkyklioi-kai-genika-eggrapha
+    tier: official
     relevance: high
+    note: Contribution amounts for the year are published here each January.
   - id: efka_nonsalaried
     label: e-ΕΦΚΑ — Εισφορές μη μισθωτών
     url: https://www.e-efka.gov.gr/el/eisfores-mi-misthoton-ypohreoseis-asfalisis
+    tier: official
+    relevance: high
+  - id: efka_news
+    label: e-ΕΦΚΑ — Δελτία τύπου
+    url: https://www.e-efka.gov.gr/el/deltia-typoy
+    tier: official
     relevance: medium
+    note: Where the monthly ειδοποιητήριο posting is announced.
+
+  # --- Official: ministry, legislation, registry ------------------------------
+  - id: minfin_news
+    label: Υπουργείο Εθνικής Οικονομίας και Οικονομικών — Ανακοινώσεις
+    url: https://www.minfin.gr/press-office
+    tier: official
+    relevance: high
+    note: Where tax reform is announced before it reaches AADE's pages.
+  - id: et_fek_search
+    label: Εθνικό Τυπογραφείο — ΦΕΚ
+    url: https://www.et.gr
+    tier: official
+    relevance: medium
+    note: >
+      The legal source of record. Worth checking by hand when confirming a
+      specific change; too broad to be a useful change-detection target.
+  - id: gemi_portal
+    label: Γ.Ε.ΜΗ. — Business Portal
+    url: https://www.businessportal.gr
+    tier: official
+    relevance: low
+  - id: gov_gr_business
+    label: gov.gr — Επιχειρηματική δραστηριότητα
+    url: https://www.gov.gr/katigories/epikheirematike-drasterioteta
+    tier: official
+    relevance: low
+
+  # --- Community: professional tax portals ------------------------------------
+  # These are what Greek accountants actually read. Fast and practical, but
+  # secondary — confirm anything material against an official source.
+  - id: taxheaven_news
+    label: Taxheaven — Ειδήσεις
+    url: https://www.taxheaven.gr/news
+    tier: community
+    relevance: high
+    note: >
+      The most widely read Greek tax portal. Typically reports changes days to
+      weeks before official pages update.
+  - id: taxheaven_calendar
+    label: Taxheaven — Φορολογικό ημερολόγιο
+    url: https://www.taxheaven.gr/calendar
+    tier: community
+    relevance: high
+    note: >
+      Monthly obligation calendar. The best available cross-check that this
+      pack's computed due dates are right — if Logistis and this calendar
+      disagree about a date, investigate before trusting Logistis.
+  - id: forin_calendar
+    label: Forin.gr — Φορολογικό ημερολόγιο
+    url: https://www.forin.gr/calendar
+    tier: community
+    relevance: high
+    note: Second independent calendar for cross-checking deadlines.
+  - id: forin_news
+    label: Forin.gr — Φορολογικά νέα
+    url: https://www.forin.gr
+    tier: community
+    relevance: medium
+  - id: eforologia_calendar
+    label: e-forologia — Ημερολόγιο υποχρεώσεων
+    url: https://www.e-forologia.gr/calendar/
+    tier: community
+    relevance: medium
+  - id: oee_announcements
+    label: Οικονομικό Επιμελητήριο Ελλάδος — Ανακοινώσεις
+    url: https://www.oe-e.gr
+    tier: community
+    relevance: medium
+    note: The professional body for accountants; useful for practice changes.
+
+  # --- Community: financial press ---------------------------------------------
+  # Lower signal-to-noise, and prone to reporting proposals as decisions. Useful
+  # for catching announced-but-not-yet-enacted reform early.
+  - id: capital_tax
+    label: Capital.gr — Φορολογία
+    url: https://www.capital.gr/tax
+    tier: community
+    relevance: medium
+  - id: naftemporiki_economy
+    label: Ναυτεμπορική — Οικονομία
+    url: https://www.naftemporiki.gr/finance/economy/
+    tier: community
+    relevance: low
+  - id: moneyreview_economy
+    label: MoneyReview — Οικονομία
+    url: https://www.moneyreview.gr/economy/
+    tier: community
+    relevance: low

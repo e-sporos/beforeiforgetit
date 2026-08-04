@@ -74,12 +74,56 @@ Leave `tracking_since` at its default (today). Do not backdate it unless the
 user genuinely wants to reconstruct history, because backdating turns every
 past period into an unproven accusation against their accountant.
 
+## Official sources vs the tax press
+
+`rules_check_sources` returns results in two tiers, and the difference decides
+what you are allowed to do with a finding.
+
+**`official`** — ΑΑΔΕ, e-ΕΦΚΑ, the ministry, ΦΕΚ, ΓΕΜΗ. Authoritative. If an
+official source contradicts a community one, the official source wins, and the
+contradiction is itself worth telling the user about. But official sources are
+slow and write in legal language: a change is often already law and being
+discussed by every accountant in Greece before the relevant AADE page updates.
+
+**`community`** — taxheaven, forin, e-forologia, the financial press. This is
+where Greek accountants actually get their daily information, and it is
+genuinely faster and more practical. It is also secondary: it reports proposals
+as though they were decisions, headlines overstate, and it contains errors.
+
+**The rule: community sources are a lead, never a citation.** You may tell the
+user "the tax press is reporting X, which would affect you — I have not
+confirmed it against AADE yet." You may not update a parameter, or state that a
+rule has changed, on a community source alone. Unconfirmed items belong in
+`pending_changes` with `confidence: low`.
+
+This is exactly how a competent accountant works: read taxheaven every morning,
+check the ΦΕΚ before telling a client to do something.
+
+### Cross-checking your own dates
+
+Logistis computes due dates from rules. taxheaven and forin publish monthly
+obligation calendars built independently. **If they disagree with a date
+Logistis produced, assume Logistis is wrong until proven otherwise** — a
+computed date cannot know about a ministerial extension published last Tuesday.
+This is the single most valuable check available, and it costs one page load.
+
+When you find a discrepancy, tell the user which date you would act on and why,
+then fix the pack or open an issue.
+
+### When fetching fails
+
+Greek government and tax-press sites rate-limit, block automated clients, and
+some are paywalled. A fetch failure is **not** evidence that nothing changed.
+Say "could not check" rather than implying "all clear", and offer to look at the
+page another way.
+
 ## The recurring rhythm
 
-**Weekly** — `rules_check_sources`. When something changed, read the page,
-judge whether it affects this business, and record your judgement with
-`rules_change_assess` so it stops resurfacing. Do not report raw hash changes
-to the user; report what changed and whether they need to care.
+**Weekly** — `rules_check_sources`. Lead with official changes; treat community
+changes as leads to confirm. Read the changed page, judge whether it affects
+this business, and record your judgement with `rules_change_assess` so it stops
+resurfacing. Do not report raw hash changes to the user; report what changed and
+whether they need to care.
 
 **Monthly** — `rules_pending_changes`, and chase anything in `at_risk`. Check
 `handoff_list` with `unanswered_only` and tell the user who owes them an answer.
@@ -91,7 +135,16 @@ document reference: those are deductions about to be lost, and there is still
 time to find the receipt.
 
 **Annually, every January** — tell the user to re-verify their e-EFKA amount
-and imputed floor, and flag that the pack's parameters are due for review.
+and imputed floor, and flag that the pack's parameters are due for review. This
+is also when e-ΕΦΚΑ publishes the year's contribution circular and most tax
+parameters change.
+
+**Annually, every March–July** — the income tax season. Filing typically opens
+mid-March and the deadline is mid-July. Push the user to file *early*: the
+early-filing discount is a few percent of their tax bill for doing in June what
+they would otherwise do in July. Then watch the eight monthly installments —
+the ones landing November through February are the ones people forget, because
+by then the return feels like finished business.
 
 ## Working with the human accountant
 

@@ -33,7 +33,9 @@ export type DueRule =
   | 'last_business_day_of_month'
   | 'day_of_month'
   | 'fixed_date'
-  | 'fixed_day_in_year';
+  | 'fixed_day_in_year'
+  /** A run of monthly payments from one assessment, e.g. tax in 8 installments. */
+  | 'installment_series';
 
 export interface DueSpec {
   rule: DueRule;
@@ -46,6 +48,8 @@ export interface DueSpec {
   years_after_period_end?: number;
   /** For `fixed_date`. */
   date?: IsoDate;
+  /** For `installment_series`: how many monthly installments. */
+  count?: number;
 }
 
 export interface ScheduleSpec {
@@ -101,11 +105,20 @@ export interface PendingChange extends Provenance {
   what_to_do: string;
 }
 
+/**
+ * `official` sources are authoritative but slow. `community` sources (the tax
+ * press, professional portals) are fast and practical but secondary — they are
+ * an early warning, never a citation. See the SOURCE POLICY block in the pack.
+ */
+export type SourceTier = 'official' | 'community';
+
 export interface WatchSource {
   id: string;
   label: string;
   url: string;
+  tier?: SourceTier;
   relevance: 'high' | 'medium' | 'low';
+  note?: string;
 }
 
 export interface JurisdictionPack {

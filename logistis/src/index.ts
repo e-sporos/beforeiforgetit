@@ -817,33 +817,59 @@ server.registerTool(
   {
     title: 'Check official sources for changes',
     description:
-      'Fetches the official pages listed in the jurisdiction pack and reports which have changed since ' +
-      'the last check. It flags *that* something changed, not what — read the changed pages to judge. ' +
-      'Sensible to run weekly.',
-    inputSchema: { source_ids: z.array(z.string()).optional().describe('Defaults to all sources in the pack') },
+      'Fetches the sources listed in the jurisdiction pack and reports which have changed since the last ' +
+      'check. Sources are tiered: `official` (government platforms — authoritative but slow) and ' +
+      '`community` (the tax press and professional portals — fast and practical, but an early warning ' +
+      'only, never a citation). It flags *that* something changed, not what. Sensible to run weekly.',
+    inputSchema: {
+      source_ids: z.array(z.string()).optional().describe('Defaults to all sources in the pack'),
+      tier: z.enum(['official', 'community']).optional().describe('Check only one tier'),
+      min_relevance: z.enum(['high', 'medium', 'low']).optional().describe('Defaults to low (everything)'),
+    },
   },
-  handler(async (args: { source_ids?: string[] }) => {
+  handler(async (args: { source_ids?: string[]; tier?: string; min_relevance?: string }) => {
     const { pack, today } = context();
+    const rank = { high: 3, medium: 2, low: 1 } as const;
+    const floor = rank[(args.min_relevance ?? 'low') as keyof typeof rank];
+
     let sources = pack.watch_sources ?? [];
     if (args.source_ids?.length) sources = sources.filter((s) => args.source_ids!.includes(s.id));
+    if (args.tier) sources = sources.filter((s) => (s.tier ?? 'community') === args.tier);
+    sources = sources.filter((s) => rank[s.relevance] >= floor);
     if (sources.length === 0) return { checked: 0, results: [], note: 'No watch sources matched.' };
 
     const results = await checkAll(sources);
     const changed = results.filter((r) => r.status === 'changed');
+    const officialChanged = changed.filter((r) => r.tier === 'official');
+    const communityChanged = changed.filter((r) => r.tier === 'community');
     const errored = results.filter((r) => r.status === 'error');
 
     return {
       as_of: today,
       checked: results.length,
       changed: changed.length,
+      changed_official: officialChanged.length,
+      changed_community: communityChanged.length,
       results,
       next_step:
-        changed.length > 0
-          ? 'Read each changed page, decide whether it affects this business, and record your judgement with rules_change_assess.'
-          : 'Nothing changed. No action needed.',
+        changed.length === 0
+          ? 'Nothing changed. No action needed.'
+          : [
+              officialChanged.length > 0
+                ? `${officialChanged.length} OFFICIAL source(s) changed — read these first; they can justify updating the pack.`
+                : undefined,
+              communityChanged.length > 0
+                ? `${communityChanged.length} community source(s) changed — treat as a lead. Confirm anything material against an official source before changing a value or telling the user a rule has changed.`
+                : undefined,
+              'Record your judgement on each with rules_change_assess so it stops resurfacing.',
+            ]
+              .filter(Boolean)
+              .join(' '),
       errors_note:
         errored.length > 0
-          ? `${errored.length} source(s) could not be fetched. Government sites rate-limit and go down; retry later before assuming anything.`
+          ? `${errored.length} source(s) could not be fetched. Greek government and tax-press sites rate-limit, ` +
+            `block automated clients, and go down; some are paywalled. A fetch failure is not evidence that ` +
+            `nothing changed — retry later, or open the page by hand.`
           : undefined,
     };
   }),

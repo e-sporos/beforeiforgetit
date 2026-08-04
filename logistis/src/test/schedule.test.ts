@@ -87,6 +87,77 @@ test('the annual income tax return lands in July of the following year', () => {
   assert.equal(returns[0]!.often_extended, true);
 });
 
+test('income tax resolves to eight monthly installments, July through February', () => {
+  const { pack, holidays } = loadPack('gr');
+  // Tax year 2025 is assessed in 2026 and paid across 2026-2027.
+  const all = resolveInstances({
+    obligations: pack.obligations,
+    profile: soleTrader,
+    holidays,
+    from: '2026-01-01',
+    to: '2027-12-31',
+    today: '2026-08-04',
+    packId: 'gr',
+  }).filter((i) => i.obligation_id === 'gr.income_tax.installments' && i.period_key.startsWith('2025'));
+
+  assert.equal(all.length, 8, 'eight installments for tax year 2025');
+
+  const first = all[0]!;
+  assert.equal(first.due_date, '2026-07-31', 'first installment at end of July 2026');
+  assert.deepEqual(first.installment, { sequence: 1, of: 8 });
+  assert.equal(first.instance_id, 'gr.income_tax.installments:2025-i1of8');
+  assert.match(first.name, /installment 1 of 8/);
+
+  const last = all[7]!;
+  assert.deepEqual(last.installment, { sequence: 8, of: 8 });
+  // 28 Feb 2027 is a Sunday, so the last working day is Friday the 26th.
+  assert.equal(last.due_date, '2027-02-26', 'last installment on the last working day of Feb 2027');
+
+  // Every installment must be distinct and strictly increasing.
+  const dates = all.map((i) => i.due_date);
+  assert.equal(new Set(dates).size, 8, 'no duplicate due dates');
+  assert.deepEqual(dates, [...dates].sort(), 'installments run in order');
+});
+
+test('the GEMI annual fee lands at the end of Q1', () => {
+  const { pack, holidays } = loadPack('gr');
+  const fees = resolveInstances({
+    obligations: pack.obligations,
+    profile: soleTrader,
+    holidays,
+    from: '2026-01-01',
+    to: '2026-12-31',
+    today: '2026-08-04',
+    packId: 'gr',
+  }).filter((i) => i.obligation_id === 'gr.gemi.annual_fee');
+
+  assert.equal(fees.length, 1);
+  assert.equal(fees[0]!.due_date, '2026-03-31');
+});
+
+test('watch sources are tiered, with official sources present', () => {
+  const { pack } = loadPack('gr');
+  const sources = pack.watch_sources ?? [];
+  assert.ok(sources.length >= 15, 'a useful watch list covers both tiers broadly');
+
+  const official = sources.filter((s) => s.tier === 'official');
+  const community = sources.filter((s) => s.tier === 'community');
+  assert.ok(official.length >= 5, 'government platforms must be represented');
+  assert.ok(community.length >= 5, 'the tax press must be represented');
+
+  // Every source must declare a tier — an untiered source would be treated as
+  // community by default, which silently downgrades a government platform.
+  for (const source of sources) {
+    assert.ok(source.tier, `${source.id} has no tier`);
+    assert.match(source.url, /^https:\/\//, `${source.id} must be https`);
+  }
+
+  assert.ok(official.some((s) => s.url.includes('aade.gr')), 'AADE');
+  assert.ok(official.some((s) => s.url.includes('e-efka.gov.gr')), 'e-EFKA');
+  assert.ok(community.some((s) => s.url.includes('taxheaven')), 'taxheaven');
+  assert.ok(community.some((s) => s.url.includes('forin')), 'forin');
+});
+
 test('the e-invoicing mandate appears exactly once, on its fixed date', () => {
   const { pack, holidays } = loadPack('gr');
   const mandate = resolveInstances({

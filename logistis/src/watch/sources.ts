@@ -12,7 +12,7 @@
 
 import { createHash } from 'node:crypto';
 
-import type { DetectedChange, SourceSnapshot, WatchSource } from '../types.js';
+import type { DetectedChange, SourceSnapshot, SourceTier, WatchSource } from '../types.js';
 import { changes, newId, snapshots } from '../store.js';
 
 /**
@@ -42,15 +42,37 @@ export interface CheckResult {
   source_id: string;
   label: string;
   url: string;
+  tier: SourceTier;
+  relevance: string;
   status: 'unchanged' | 'changed' | 'first_seen' | 'error';
   detail?: string;
   change_id?: string;
   excerpt?: string;
+  /** Carried through so a community hit is never treated as authoritative. */
+  handling?: string;
 }
+
+const HANDLING: Record<SourceTier, string> = {
+  official:
+    'Authoritative. A change here can update the pack once you have read the actual text.',
+  community:
+    'Early warning only. Confirm against an official source before changing any value — the tax press ' +
+    'reports proposals as decisions more often than it should.',
+};
 
 export async function checkSource(source: WatchSource, timeoutMs = 20_000): Promise<CheckResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const tier: SourceTier = source.tier ?? 'community';
+  const base = {
+    source_id: source.id,
+    label: source.label,
+    url: source.url,
+    tier,
+    relevance: source.relevance,
+    handling: HANDLING[tier],
+  };
 
   try {
     const response = await fetch(source.url, {
@@ -64,7 +86,7 @@ export async function checkSource(source: WatchSource, timeoutMs = 20_000): Prom
     });
 
     if (!response.ok) {
-      return { source_id: source.id, label: source.label, url: source.url, status: 'error', detail: `HTTP ${response.status}` };
+      return { ...base, status: 'error', detail: `HTTP ${response.status}` };
     }
 
     const text = extractText(await response.text());
@@ -83,9 +105,7 @@ export async function checkSource(source: WatchSource, timeoutMs = 20_000): Prom
     if (!previous) {
       snapshots.put(snapshot);
       return {
-        source_id: source.id,
-        label: source.label,
-        url: source.url,
+        ...base,
         status: 'first_seen',
         detail: 'Baseline recorded. Future checks will report changes against it.',
         excerpt,
@@ -94,7 +114,7 @@ export async function checkSource(source: WatchSource, timeoutMs = 20_000): Prom
 
     if (previous.hash === hash) {
       snapshots.put(snapshot);
-      return { source_id: source.id, label: source.label, url: source.url, status: 'unchanged' };
+      return { ...base, status: 'unchanged' };
     }
 
     const change: DetectedChange = {
@@ -110,9 +130,7 @@ export async function checkSource(source: WatchSource, timeoutMs = 20_000): Prom
     snapshots.put(snapshot);
 
     return {
-      source_id: source.id,
-      label: source.label,
-      url: source.url,
+      ...base,
       status: 'changed',
       change_id: change.id,
       detail: 'Content changed since the last check. Read the page and judge whether it affects you.',
@@ -120,7 +138,7 @@ export async function checkSource(source: WatchSource, timeoutMs = 20_000): Prom
     };
   } catch (error) {
     const message = (error as Error).name === 'AbortError' ? `Timed out after ${timeoutMs}ms` : (error as Error).message;
-    return { source_id: source.id, label: source.label, url: source.url, status: 'error', detail: message };
+    return { ...base, status: 'error', detail: message };
   } finally {
     clearTimeout(timer);
   }
